@@ -213,6 +213,7 @@ select option { background: var(--card); }
 .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCHNATXkyt7mCa1T3tYqEUuL-BdIFvcA74&callback=initGoogleMap" async defer></script>
 </head>
 <body>
 
@@ -334,20 +335,7 @@ select option { background: var(--card); }
 
   <!-- MAP -->
   <div class="tab-panel" id="panel-map">
-    <div class="map-wrap">
-      <div class="map-grid"></div>
-      <div class="map-overlay"></div>
-      <div id="map-pins"></div>
-      <div class="map-legend">
-        <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Online</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Missing</div>
-        <div class="legend-item"><div class="legend-dot" style="background:var(--muted)"></div>Offline</div>
-      </div>
-      <div id="map-empty" style="display:none;" class="map-placeholder">
-        <div style="font-size:48px;">🗺️</div>
-        <div>No clients online yet</div>
-      </div>
-    </div>
+    <div id="google-map" style="flex:1;width:100%;height:100%;min-height:400px;"></div>
   </div>
 
   <!-- COMPASS -->
@@ -639,26 +627,87 @@ function renderRoster() {
 }
 
 // ══ MAP ══
-const PIN_POS = [
-  {left:'22%',top:'28%'},{left:'62%',top:'32%'},{left:'38%',top:'60%'},
-  {left:'72%',top:'58%'},{left:'18%',top:'52%'},{left:'52%',top:'22%'},
-  {left:'44%',top:'42%'},{left:'78%',top:'38%'},{left:'30%',top:'72%'},{left:'60%',top:'68%'}
-];
+let gmap = null;
+let mapMarkers = {};
+let mapInitialized = false;
+
+function initGoogleMap() {
+  if (mapInitialized) return;
+  mapInitialized = true;
+  const mapEl = document.getElementById('google-map');
+  if (!mapEl) return;
+  gmap = new google.maps.Map(mapEl, {
+    zoom: 15,
+    center: { lat: 40.7128, lng: -74.0060 },
+    mapTypeId: 'roadmap',
+    styles: [
+      {elementType:'geometry',stylers:[{color:'#1a2235'}]},
+      {elementType:'labels.text.fill',stylers:[{color:'#64748b'}]},
+      {elementType:'labels.text.stroke',stylers:[{color:'#0a0f1e'}]},
+      {featureType:'road',elementType:'geometry',stylers:[{color:'#111827'}]},
+      {featureType:'road',elementType:'geometry.stroke',stylers:[{color:'#0a0f1e'}]},
+      {featureType:'road.highway',elementType:'geometry',stylers:[{color:'#1a2235'}]},
+      {featureType:'water',elementType:'geometry',stylers:[{color:'#0a0f1e'}]},
+      {featureType:'poi',stylers:[{visibility:'off'}]},
+      {featureType:'transit',stylers:[{visibility:'off'}]}
+    ],
+    disableDefaultUI: true,
+    zoomControl: true,
+  });
+  renderMap();
+}
 
 function renderMap() {
-  const container = document.getElementById('map-pins');
-  const empty = document.getElementById('map-empty');
-  const visible = clients.filter(c => c.status !== 'offline');
-  empty.style.display = visible.length === 0 ? 'flex' : 'none';
-  container.innerHTML = visible.map((c, i) => {
-    const pos = PIN_POS[i % PIN_POS.length];
-    const col = c.status === 'online' ? 'g' : c.status === 'missing' ? 'r' : 'o';
-    return `
-      <div class="pin" style="left:${pos.left};top:${pos.top};" onclick="openModal('${c.id}')">
-        <div class="pin-bubble ${col}"><span class="pin-emoji">${c.emoji||'👤'}</span></div>
-        <div class="pin-name">${c.name.split(' ')[0]}</div>
-      </div>`;
-  }).join('');
+  if (!gmap) return;
+  const visible = clients.filter(c => c.status !== 'offline' && c.lat && c.lng);
+  
+  // Remove old markers not in current list
+  Object.keys(mapMarkers).forEach(id => {
+    if (!visible.find(c => c.id === id)) {
+      mapMarkers[id].setMap(null);
+      delete mapMarkers[id];
+    }
+  });
+
+  if (visible.length === 0) return;
+
+  const bounds = new google.maps.LatLngBounds();
+
+  visible.forEach(c => {
+    const pos = { lat: c.lat, lng: c.lng };
+    const color = c.status === 'missing' ? '#f43f5e' : '#00e5a0';
+
+    if (mapMarkers[c.id]) {
+      mapMarkers[c.id].setPosition(pos);
+    } else {
+      const marker = new google.maps.Marker({
+        position: pos,
+        map: gmap,
+        title: c.name,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 10,
+          fillColor: color,
+          fillOpacity: 1,
+          strokeColor: '#0a0f1e',
+          strokeWeight: 2,
+        },
+        label: {
+          text: c.name.split(' ')[0],
+          color: '#f1f5f9',
+          fontSize: '11px',
+          fontWeight: 'bold',
+          fontFamily: 'Outfit, sans-serif',
+        }
+      });
+      marker.addListener('click', () => openModal(c.id));
+      mapMarkers[c.id] = marker;
+    }
+    bounds.extend(pos);
+  });
+
+  gmap.fitBounds(bounds);
+  if (visible.length === 1) gmap.setZoom(16);
 }
 
 // ══ COMPASS ══
@@ -785,7 +834,7 @@ function switchTab(name) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   document.getElementById('panel-'+name).classList.add('active');
-  if (name === 'map') renderMap();
+  if (name === 'map') { if (!mapInitialized && typeof google !== 'undefined') initGoogleMap(); else renderMap(); }
   if (name === 'compass') { renderCompassTargets(); updateCompass(); }
 }
 
