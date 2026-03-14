@@ -204,6 +204,9 @@ select option { background: var(--card); }
 .modal-actions { display: flex; gap: 10px; margin-top: 4px; }
 .modal-actions .btn { flex: 1; }
 
+#leaflet-map { flex: 1; width: 100%; min-height: 400px; }
+.map-label { background: rgba(10,15,30,0.9); border: 1px solid rgba(255,255,255,0.08); color: #f1f5f9; font-family: Outfit,sans-serif; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px; box-shadow: none; }
+.leaflet-container { background: #1a2235; }
 /* ── TOAST ── */
 .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--card2); border: 1px solid var(--border); color: var(--text); padding: 12px 20px; border-radius: 100px; font-size: 14px; font-weight: 500; z-index: 999; transition: transform 0.3s ease; white-space: nowrap; }
 .toast.show { transform: translateX(-50%) translateY(0); }
@@ -213,7 +216,8 @@ select option { background: var(--card); }
 .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCHNATXkyt7mCa1T3tYqEUuL-BdIFvcA74&callback=initGoogleMap" async defer></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
 
@@ -335,7 +339,7 @@ select option { background: var(--card); }
 
   <!-- MAP -->
   <div class="tab-panel" id="panel-map">
-    <div id="google-map" style="flex:1;width:100%;height:100%;min-height:400px;"></div>
+    <div id="leaflet-map"></div>
   </div>
 
   <!-- COMPASS -->
@@ -394,7 +398,8 @@ select option { background: var(--card); }
     </div>
     <div class="modal-actions">
       <button class="btn btn-dark btn-sm" onclick="compassTo()">🧭 Navigate</button>
-      <button class="btn btn-red btn-sm" onclick="markMissing()">🔴 Mark Missing</button>
+      <button class="btn btn-red btn-sm" onclick="markMissing()">🔴 Missing</button>
+      <button class="btn btn-dark btn-sm" onclick="confirmRemove()" style="border-color:rgba(244,63,94,0.3);color:var(--red);">🗑️ Remove</button>
       <button class="btn btn-dark btn-sm" onclick="closeModal()">✕</button>
     </div>
   </div>
@@ -424,7 +429,7 @@ async function initFirebase() {
     });
     db = db_.getDatabase(firebaseApp);
     fbRef = db_.ref; fbSet = db_.set; fbOnValue = db_.onValue;
-    fbUpdate = db_.update; fbPush = db_.push; fbGet = db_.get;
+    fbUpdate = db_.update; fbPush = db_.push; fbGet = db_.get; fbRemove = db_.remove;
     firebaseReady = true;
   } catch(e) {
     // Firebase unavailable (local file) — run in demo mode
@@ -444,6 +449,7 @@ function setupDemoMode() {
   fbUpdate = async () => {};
   fbPush = () => ({ key: 'demo-' + Date.now() });
   fbGet = async () => ({ val: () => null });
+  fbRemove = async () => {};
 }
 
 const DEMO_CLIENTS = [
@@ -626,88 +632,72 @@ function renderRoster() {
   }).join('');
 }
 
-// ══ MAP ══
-let gmap = null;
+// ══ MAP (Leaflet — free, no API key) ══
+let lmap = null;
 let mapMarkers = {};
 let mapInitialized = false;
 
-function initGoogleMap() {
+function initLeafletMap() {
   if (mapInitialized) return;
   mapInitialized = true;
-  const mapEl = document.getElementById('google-map');
+  const mapEl = document.getElementById('leaflet-map');
   if (!mapEl) return;
-  gmap = new google.maps.Map(mapEl, {
-    zoom: 15,
-    center: { lat: 40.7128, lng: -74.0060 },
-    mapTypeId: 'roadmap',
-    styles: [
-      {elementType:'geometry',stylers:[{color:'#1a2235'}]},
-      {elementType:'labels.text.fill',stylers:[{color:'#64748b'}]},
-      {elementType:'labels.text.stroke',stylers:[{color:'#0a0f1e'}]},
-      {featureType:'road',elementType:'geometry',stylers:[{color:'#111827'}]},
-      {featureType:'road',elementType:'geometry.stroke',stylers:[{color:'#0a0f1e'}]},
-      {featureType:'road.highway',elementType:'geometry',stylers:[{color:'#1a2235'}]},
-      {featureType:'water',elementType:'geometry',stylers:[{color:'#0a0f1e'}]},
-      {featureType:'poi',stylers:[{visibility:'off'}]},
-      {featureType:'transit',stylers:[{visibility:'off'}]}
-    ],
-    disableDefaultUI: true,
-    zoomControl: true,
-  });
+
+  lmap = L.map('leaflet-map', { zoomControl: true }).setView([40.7128, -74.006], 13);
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO',
+    subdomains: 'abcd',
+    maxZoom: 19
+  }).addTo(lmap);
+
   renderMap();
 }
 
+function makeIcon(color) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid #0a0f1e;box-shadow:0 0 6px ${color}88;"></div>`,
+    iconSize: [14, 14],
+    iconAnchor: [7, 7],
+  });
+}
+
 function renderMap() {
-  if (!gmap) return;
+  if (!lmap) return;
   const visible = clients.filter(c => c.status !== 'offline' && c.lat && c.lng);
-  
-  // Remove old markers not in current list
+
+  // Remove stale markers
   Object.keys(mapMarkers).forEach(id => {
     if (!visible.find(c => c.id === id)) {
-      mapMarkers[id].setMap(null);
+      lmap.removeLayer(mapMarkers[id]);
       delete mapMarkers[id];
     }
   });
 
   if (visible.length === 0) return;
 
-  const bounds = new google.maps.LatLngBounds();
-
+  const bounds = [];
   visible.forEach(c => {
-    const pos = { lat: c.lat, lng: c.lng };
     const color = c.status === 'missing' ? '#f43f5e' : '#00e5a0';
-
+    const pos = [c.lat, c.lng];
     if (mapMarkers[c.id]) {
-      mapMarkers[c.id].setPosition(pos);
+      mapMarkers[c.id].setLatLng(pos);
     } else {
-      const marker = new google.maps.Marker({
-        position: pos,
-        map: gmap,
-        title: c.name,
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 10,
-          fillColor: color,
-          fillOpacity: 1,
-          strokeColor: '#0a0f1e',
-          strokeWeight: 2,
-        },
-        label: {
-          text: c.name.split(' ')[0],
-          color: '#f1f5f9',
-          fontSize: '11px',
-          fontWeight: 'bold',
-          fontFamily: 'Outfit, sans-serif',
-        }
-      });
-      marker.addListener('click', () => openModal(c.id));
+      const marker = L.marker(pos, { icon: makeIcon(color) })
+        .addTo(lmap)
+        .bindTooltip(c.name.split(' ')[0], { permanent: true, direction: 'top', className: 'map-label' })
+        .on('click', () => openModal(c.id));
       mapMarkers[c.id] = marker;
     }
-    bounds.extend(pos);
+    bounds.push(pos);
   });
 
-  gmap.fitBounds(bounds);
-  if (visible.length === 1) gmap.setZoom(16);
+  if (bounds.length === 1) {
+    lmap.setView(bounds[0], 16);
+  } else {
+    lmap.fitBounds(bounds, { padding: [40, 40] });
+  }
 }
 
 // ══ COMPASS ══
@@ -818,6 +808,45 @@ function markMissing() {
   closeModal();
 }
 
+function confirmRemove() {
+  if (!selectedClient) return;
+  const name = selectedClient.name;
+  // Show confirmation inside modal
+  const actions = document.querySelector('.modal-actions');
+  actions.innerHTML = `
+    <div style="width:100%;text-align:center;">
+      <div style="font-size:14px;margin-bottom:12px;color:var(--text);">Remove <strong>${name}</strong> from the roster?</div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-dark btn-sm" style="flex:1;" onclick="renderModalActions()">Cancel</button>
+        <button class="btn btn-red btn-sm" style="flex:1;" onclick="removeClient()">Yes, Remove</button>
+      </div>
+    </div>`;
+}
+
+function renderModalActions() {
+  const actions = document.querySelector('.modal-actions');
+  actions.innerHTML = `
+    <button class="btn btn-dark btn-sm" onclick="compassTo()">🧭 Navigate</button>
+    <button class="btn btn-red btn-sm" onclick="markMissing()">🔴 Missing</button>
+    <button class="btn btn-dark btn-sm" onclick="confirmRemove()" style="border-color:rgba(244,63,94,0.3);color:var(--red);">🗑️ Remove</button>
+    <button class="btn btn-dark btn-sm" onclick="closeModal()">✕</button>`;
+}
+
+function removeClient() {
+  if (!selectedClient) return;
+  const name = selectedClient.name;
+  const id = selectedClient.id;
+  if (demoMode) {
+    clients = clients.filter(c => c.id !== id);
+    if (mapMarkers[id]) { lmap && lmap.removeLayer(mapMarkers[id]); delete mapMarkers[id]; }
+    renderRoster(); renderMap(); renderCompassTargets();
+  } else {
+    fbRemove(fbRef(db, `orgs/${orgCode}/clients/${id}`));
+  }
+  toast(`🗑️ ${name} removed from roster`, '');
+  closeModal();
+}
+
 function compassTo() {
   if (!selectedClient) return;
   closeModal();
@@ -834,7 +863,21 @@ function switchTab(name) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   document.getElementById('panel-'+name).classList.add('active');
-  if (name === 'map') { if (!mapInitialized && typeof google !== 'undefined') initGoogleMap(); else renderMap(); }
+  if (name === 'map') {
+    if (!mapInitialized) {
+      if (typeof L !== 'undefined') {
+        initLeafletMap();
+      } else {
+        // Wait for Leaflet to load
+        const wait = setInterval(() => {
+          if (typeof L !== 'undefined') { clearInterval(wait); initLeafletMap(); }
+        }, 100);
+      }
+    } else {
+      renderMap();
+      setTimeout(() => lmap && lmap.invalidateSize(), 100);
+    }
+  }
   if (name === 'compass') { renderCompassTargets(); updateCompass(); }
 }
 
