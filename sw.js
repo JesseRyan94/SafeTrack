@@ -1,4 +1,4 @@
-const CACHE = 'safetrack-v1';
+const CACHE = 'safetrack-v3';
 const ASSETS = [
   '/SafeTrack/safetrack.html',
   '/SafeTrack/manifest.json'
