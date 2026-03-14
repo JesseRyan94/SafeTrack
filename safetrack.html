@@ -594,7 +594,8 @@ function subscribeClients() {
   clientUnsubscribe = fbOnValue(r, snap => {
     const data = snap.val() || {};
     clients = Object.entries(data).map(([id, c]) => ({ id, ...c }));
-    renderRoster(); renderMap(); renderCompassTargets();
+    renderRoster(); renderCompassTargets();
+    if (lmap) { lmap.invalidateSize(); renderMap(); } else renderMap();
   });
 }
 
@@ -740,7 +741,8 @@ function updateCompass() {
   const bearing = getBearing(myLat, myLng, compassTarget.lat, compassTarget.lng);
   const dist = getDist(myLat, myLng, compassTarget.lat, compassTarget.lng);
   document.getElementById('needle').style.transform = `rotate(${bearing}deg)`;
-  document.getElementById('compass-dist').textContent = dist < 1000 ? Math.round(dist)+'m' : (dist/1000).toFixed(2)+'km';
+  const feet = dist * 3.28084;
+  document.getElementById('compass-dist').textContent = feet < 5280 ? Math.round(feet)+' ft' : (feet/5280).toFixed(2)+' mi';
   document.getElementById('compass-to').textContent = `to ${compassTarget.name}`;
 }
 
@@ -875,7 +877,7 @@ function switchTab(name) {
       }
     } else {
       renderMap();
-      setTimeout(() => lmap && lmap.invalidateSize(), 100);
+      setTimeout(() => { lmap && lmap.invalidateSize(); renderMap(); }, 150);
     }
   }
   if (name === 'compass') { renderCompassTargets(); updateCompass(); }
