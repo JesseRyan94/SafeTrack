@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0f1e">
+<title>SafeTrack</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0f1e;
+  --card: #111827;
+  --card2: #1a2235;
+  --green: #00e5a0;
+  --blue: #3b82f6;
+  --red: #f43f5e;
+  --yellow: #fbbf24;
+  --text: #f1f5f9;
+  --muted: #64748b;
+  --border: rgba(255,255,255,0.08);
+  --r: 14px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; }
+body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); }
+
+/* ── SCREENS ── */
+.screen { display: none; height: 100dvh; flex-direction: column; overflow: hidden; }
+.screen.active { display: flex; }
+
+/* ── LANDING ── */
+#s-landing {
+  align-items: center; justify-content: center;
+  gap: 36px; padding: 40px 28px; text-align: center;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,229,160,0.1) 0%, transparent 70%), var(--bg);
+}
+.logo { font-family: 'Space Mono', monospace; font-size: 36px; font-weight: 700; letter-spacing: -1px; }
+.logo span { color: var(--green); }
+.tagline { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 280px; }
+.btn-stack { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 340px; }
+.btn { width: 100%; padding: 16px; border: none; border-radius: var(--r); font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.18s; }
+.btn-green { background: var(--green); color: #021a0e; }
+.btn-green:active { opacity: 0.85; transform: scale(0.98); }
+.btn-dark { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+.btn-dark:active { background: var(--card2); }
+.btn-red { background: var(--red); color: white; }
+.btn-red:active { opacity: 0.85; }
+.btn-sm { padding: 10px 16px; font-size: 14px; border-radius: 10px; }
+
+/* ── ROLE SCREENS ── */
+.role-screen { flex: 1; display: flex; flex-direction: column; padding: 32px 24px; gap: 20px; overflow-y: auto; }
+.back-btn { display: flex; align-items: center; gap: 8px; background: none; border: none; color: var(--muted); font-family: 'Outfit', sans-serif; font-size: 14px; cursor: pointer; padding: 0; margin-bottom: 8px; }
+.back-btn:active { color: var(--text); }
+.screen-title { font-size: 28px; font-weight: 800; }
+.screen-sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
+
+/* ── INPUTS ── */
+.input-group { display: flex; flex-direction: column; gap: 8px; }
+label { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+input, select {
+  background: var(--card); border: 1px solid var(--border);
+  color: var(--text); border-radius: 10px;
+  padding: 14px 16px; font-family: 'Outfit', sans-serif; font-size: 15px;
+  width: 100%; outline: none;
+}
+input:focus, select:focus { border-color: var(--green); }
+select option { background: var(--card); }
+
+/* ── CLIENT APP ── */
+#s-client { background: var(--bg); }
+.client-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+.client-header h2 { font-size: 18px; font-weight: 700; }
+.client-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; padding: 24px; text-align: center; }
+
+.pulse-ring {
+  width: 150px; height: 150px; border-radius: 50%; position: relative;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--border);
+}
+.pulse-ring.sharing { border-color: var(--green); animation: pulse 2s ease-in-out infinite; }
+.pulse-ring.sharing::before, .pulse-ring.sharing::after {
+  content: ''; position: absolute; border-radius: 50%; border: 1.5px solid var(--green);
+  animation: ripple 2s ease-out infinite;
+}
+.pulse-ring.sharing::after { animation-delay: 1s; }
+@keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(0,229,160,0.3)} 50%{box-shadow:0 0 0 12px rgba(0,229,160,0)} }
+@keyframes ripple { 0%{width:100%;height:100%;opacity:0.6} 100%{width:160%;height:160%;opacity:0;left:-30%;top:-30%} }
+.pulse-icon { font-size: 52px; }
+.share-label { font-size: 22px; font-weight: 700; }
+.share-sub { color: var(--muted); font-size: 14px; line-height: 1.6; max-width: 260px; }
+.coord-box { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--green); background: rgba(0,229,160,0.07); border: 1px solid rgba(0,229,160,0.2); border-radius: 10px; padding: 10px 16px; }
+
+/* ── STAFF APP ── */
+#s-staff { background: var(--bg); }
+.staff-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); background: rgba(10,15,30,0.95); position: sticky; top: 0; z-index: 50; backdrop-filter: blur(10px); }
+.staff-header h2 { font-size: 17px; font-weight: 700; }
+.header-org { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--green); background: rgba(0,229,160,0.1); border-radius: 6px; padding: 4px 8px; }
+
+/* ── TAB BAR ── */
+.tab-bar { display: flex; border-bottom: 1px solid var(--border); }
+.tab { flex: 1; padding: 12px 4px; font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 600; text-align: center; cursor: pointer; color: var(--muted); border: none; background: none; display: flex; flex-direction: column; align-items: center; gap: 3px; border-bottom: 2px solid transparent; transition: all 0.18s; }
+.tab.active { color: var(--green); border-bottom-color: var(--green); }
+.tab-icon { font-size: 18px; }
+
+.tab-panel { display: none; flex: 1; flex-direction: column; overflow-y: auto; }
+.tab-panel.active { display: flex; }
+
+/* ── ROSTER TAB ── */
+.roster-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px 8px; }
+.roster-head h3 { font-size: 16px; font-weight: 700; }
+.stats-row { display: flex; gap: 10px; padding: 0 18px 14px; }
+.stat { flex: 1; background: var(--card); border-radius: 12px; padding: 12px; text-align: center; }
+.stat-n { font-size: 22px; font-weight: 800; }
+.stat-n.g { color: var(--green); }
+.stat-n.r { color: var(--red); }
+.stat-n.y { color: var(--yellow); }
+.stat-l { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+.client-list { display: flex; flex-direction: column; gap: 8px; padding: 0 18px 20px; }
+.client-row {
+  background: var(--card); border-radius: var(--r); padding: 14px 16px;
+  display: flex; align-items: center; gap: 14px; cursor: pointer;
+  border: 1px solid var(--border); transition: all 0.18s;
+  position: relative; overflow: hidden;
+}
+.client-row::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 3px 0 0 3px; }
+.client-row.online::before { background: var(--green); }
+.client-row.offline::before { background: var(--muted); }
+.client-row.missing::before { background: var(--red); animation: blink 1s step-end infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+.client-row:active { background: var(--card2); }
+.av { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg,#3b82f6,#7c3aed); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; position: relative; }
+.av-dot { position: absolute; bottom: -2px; right: -2px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--card); }
+.av-dot.on { background: var(--green); }
+.av-dot.off { background: var(--muted); }
+.av-dot.miss { background: var(--red); }
+.row-info { flex: 1; min-width: 0; }
+.row-name { font-weight: 700; font-size: 15px; }
+.row-status { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.row-status.g { color: var(--green); }
+.row-status.r { color: var(--red); }
+.row-time { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.missing-badge { background: rgba(244,63,94,0.15); color: var(--red); border: 1px solid rgba(244,63,94,0.3); border-radius: 6px; padding: 2px 8px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; }
+.empty-state { text-align: center; padding: 48px 24px; color: var(--muted); }
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-text { font-size: 15px; }
+
+/* ── ADD CLIENT TAB ── */
+.add-form { padding: 20px 18px; display: flex; flex-direction: column; gap: 16px; }
+
+/* ── MAP TAB ── */
+.map-wrap { flex: 1; position: relative; background: var(--card); overflow: hidden; }
+.map-bg { width: 100%; height: 100%; object-fit: cover; opacity: 0.15; }
+.map-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 60%, var(--bg) 100%); }
+.map-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--muted); }
+.map-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(59,130,246,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.08) 1px, transparent 1px); background-size: 40px 40px; }
+.pin { position: absolute; transform: translate(-50%, -100%); cursor: pointer; transition: transform 0.2s; }
+.pin:active { transform: translate(-50%, -100%) scale(1.2); }
+.pin-bubble { width: 36px; height: 36px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; border: 2px solid white; }
+.pin-bubble.g { background: var(--green); }
+.pin-bubble.r { background: var(--red); animation: blink 1s step-end infinite; }
+.pin-bubble.o { background: var(--muted); }
+.pin-emoji { transform: rotate(45deg); font-size: 16px; }
+.pin-name { font-size: 10px; font-weight: 700; text-align: center; margin-top: 2px; text-shadow: 0 1px 3px rgba(0,0,0,0.8); white-space: nowrap; }
+.map-legend { position: absolute; bottom: 16px; left: 16px; background: rgba(10,15,30,0.9); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; font-size: 12px; display: flex; flex-direction: column; gap: 6px; }
+.legend-item { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── COMPASS TAB ── */
+.compass-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; padding: 24px; }
+.compass-targets { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; width: 100%; max-width: 400px; }
+.target-chip { padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; background: var(--card); border: 1px solid var(--border); cursor: pointer; transition: all 0.18s; }
+.target-chip.selected { background: rgba(0,229,160,0.15); border-color: var(--green); color: var(--green); }
+.target-chip.miss { border-color: rgba(244,63,94,0.4); color: var(--red); }
+.compass-dial { width: 200px; height: 200px; border-radius: 50%; border: 2px solid var(--border); position: relative; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle, var(--card2) 0%, var(--card) 100%); }
+.compass-dial::before { content: 'N'; position: absolute; top: 10px; font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; color: var(--muted); }
+.compass-dial::after { content: 'S'; position: absolute; bottom: 10px; font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; color: var(--muted); }
+.needle { width: 4px; height: 80px; position: relative; transition: transform 0.5s ease; }
+.needle-top { width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 44px solid var(--green); margin: 0 auto; }
+.needle-bot { width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 44px solid var(--red); margin: 0 auto; }
+.compass-dist { font-family: 'Space Mono', monospace; font-size: 32px; font-weight: 700; color: var(--green); }
+.compass-to { font-size: 14px; color: var(--muted); }
+
+/* ── MODAL ── */
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: flex-end; backdrop-filter: blur(4px); }
+.modal-bg.open { display: flex; }
+.modal { background: var(--card); border-radius: 20px 20px 0 0; padding: 24px 20px 36px; width: 100%; display: flex; flex-direction: column; gap: 16px; }
+.modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 8px; }
+.modal-avatar { width: 64px; height: 64px; border-radius: 16px; background: linear-gradient(135deg,#3b82f6,#7c3aed); display: flex; align-items: center; justify-content: center; font-size: 28px; }
+.modal-name { font-size: 22px; font-weight: 800; }
+.modal-status { font-size: 14px; }
+.modal-status.g { color: var(--green); }
+.modal-status.r { color: var(--red); }
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.detail-cell { background: var(--card2); border-radius: 10px; padding: 12px; }
+.detail-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.detail-val { font-family: 'Space Mono', monospace; font-size: 13px; }
+.modal-actions { display: flex; gap: 10px; margin-top: 4px; }
+.modal-actions .btn { flex: 1; }
+
+/* ── TOAST ── */
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--card2); border: 1px solid var(--border); color: var(--text); padding: 12px 20px; border-radius: 100px; font-size: 14px; font-weight: 500; z-index: 999; transition: transform 0.3s ease; white-space: nowrap; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ── LOADING ── */
+.loading { display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column; gap: 16px; color: var(--muted); }
+.spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- ══ LOADING ══ -->
+<div id="s-loading" class="screen active">
+  <div class="loading">
+    <div class="spinner"></div>
+    <div>Connecting…</div>
+  </div>
+</div>
+
+<!-- ══ LANDING ══ -->
+<div id="s-landing" class="screen">
+  <div style="font-size:56px;">📍</div>
+  <div>
+    <div class="logo">Safe<span>Track</span></div>
+    <div class="tagline" style="margin-top:8px;">Real-time location tracking for your group</div>
+  </div>
+  <div class="btn-stack">
+    <button class="btn btn-green" onclick="goStaff()">I'm Staff</button>
+    <button class="btn btn-dark" onclick="goClient()">I'm a Client</button>
+    <button class="btn btn-dark" onclick="viewDemo()" style="border-color:rgba(0,229,160,0.3);color:var(--green);font-size:14px;">👀 View Demo</button>
+  </div>
+</div>
+
+<!-- ══ STAFF LOGIN ══ -->
+<div id="s-staff-login" class="screen">
+  <div class="role-screen">
+    <button class="back-btn" onclick="show('s-landing')">← Back</button>
+    <div class="screen-title">Staff Login</div>
+    <div class="screen-sub">Enter your org code to access the dashboard</div>
+    <div class="input-group">
+      <label>Org Code</label>
+      <input id="staff-org" type="text" placeholder="e.g. HOPE-2024" autocapitalize="characters">
+    </div>
+    <div class="input-group">
+      <label>Your Name</label>
+      <input id="staff-name" type="text" placeholder="Your name">
+    </div>
+    <button class="btn btn-green" style="margin-top:8px;" onclick="staffLogin()">Enter Dashboard</button>
+  </div>
+</div>
+
+<!-- ══ CLIENT JOIN ══ -->
+<div id="s-client-join" class="screen">
+  <div class="role-screen">
+    <button class="back-btn" onclick="show('s-landing')">← Back</button>
+    <div class="screen-title">Join a Group</div>
+    <div class="screen-sub">Enter the code your staff gave you</div>
+    <div class="input-group">
+      <label>Org Code</label>
+      <input id="client-org" type="text" placeholder="e.g. HOPE-2024" autocapitalize="characters">
+    </div>
+    <div class="input-group">
+      <label>Your Name</label>
+      <input id="client-name" type="text" placeholder="Your name">
+    </div>
+    <button class="btn btn-green" style="margin-top:8px;" onclick="clientJoin()">Join &amp; Share Location</button>
+  </div>
+</div>
+
+<!-- ══ CLIENT APP ══ -->
+<div id="s-client" class="screen">
+  <div class="client-header">
+    <div style="font-family:'Space Mono',monospace;font-size:16px;font-weight:700;">Safe<span style="color:var(--green)">Track</span></div>
+    <div id="c-orgbadge" style="font-family:'Space Mono',monospace;font-size:11px;color:var(--green);background:rgba(0,229,160,0.1);border-radius:6px;padding:4px 8px;"></div>
+  </div>
+  <div class="client-body">
+    <div id="c-ring" class="pulse-ring sharing">
+      <div class="pulse-icon">📍</div>
+    </div>
+    <div>
+      <div id="c-label" class="share-label">Sharing Location</div>
+      <div id="c-sub" class="share-sub" style="margin-top:6px;">Your location is being shared with your group.</div>
+    </div>
+    <div id="c-coords" class="coord-box">Acquiring GPS…</div>
+    <div style="display:flex;gap:10px;width:100%;max-width:320px;">
+      <button class="btn btn-dark btn-sm" style="flex:1;" onclick="toggleSharing()">Pause Sharing</button>
+      <button class="btn btn-dark btn-sm" style="flex:1;" onclick="clientLeave()">Leave Group</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STAFF APP ══ -->
+<div id="s-staff" class="screen">
+  <div class="staff-header">
+    <div style="font-family:'Space Mono',monospace;font-size:16px;font-weight:700;">Safe<span style="color:var(--green)">Track</span></div>
+    <div id="s-orgbadge" class="header-org"></div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('roster')" id="tab-roster">
+      <span class="tab-icon">👥</span>Roster
+    </button>
+    <button class="tab" onclick="switchTab('map')" id="tab-map">
+      <span class="tab-icon">🗺️</span>Map
+    </button>
+    <button class="tab" onclick="switchTab('compass')" id="tab-compass">
+      <span class="tab-icon">🧭</span>Compass
+    </button>
+    <button class="tab" onclick="switchTab('add')" id="tab-add">
+      <span class="tab-icon">➕</span>Add
+    </button>
+  </div>
+
+  <!-- ROSTER -->
+  <div class="tab-panel active" id="panel-roster">
+    <div class="roster-head">
+      <h3>Clients</h3>
+      <button class="btn btn-dark btn-sm" onclick="staffLeave()">Leave</button>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><div class="stat-n g" id="cnt-online">0</div><div class="stat-l">Online</div></div>
+      <div class="stat"><div class="stat-n r" id="cnt-missing">0</div><div class="stat-l">Missing</div></div>
+      <div class="stat"><div class="stat-n" id="cnt-total">0</div><div class="stat-l">Total</div></div>
+    </div>
+    <div class="client-list" id="client-list"></div>
+  </div>
+
+  <!-- MAP -->
+  <div class="tab-panel" id="panel-map">
+    <div class="map-wrap">
+      <div class="map-grid"></div>
+      <div class="map-overlay"></div>
+      <div id="map-pins"></div>
+      <div class="map-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Online</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Missing</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--muted)"></div>Offline</div>
+      </div>
+      <div id="map-empty" style="display:none;" class="map-placeholder">
+        <div style="font-size:48px;">🗺️</div>
+        <div>No clients online yet</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPASS -->
+  <div class="tab-panel" id="panel-compass">
+    <div class="compass-wrap">
+      <div class="compass-targets" id="compass-targets"></div>
+      <div class="compass-dial">
+        <div id="needle" class="needle" style="transform:rotate(0deg);">
+          <div class="needle-top"></div>
+          <div class="needle-bot"></div>
+        </div>
+      </div>
+      <div>
+        <div class="compass-dist" id="compass-dist">—</div>
+        <div class="compass-to" id="compass-to">Select a client above</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD CLIENT -->
+  <div class="tab-panel" id="panel-add">
+    <div class="add-form">
+      <div style="font-size:18px;font-weight:700;">Add Client</div>
+      <div class="input-group">
+        <label>Client Name</label>
+        <input id="new-name" type="text" placeholder="Full name">
+      </div>
+      <div class="input-group">
+        <label>Initial Status</label>
+        <select id="new-status">
+          <option value="offline">Offline</option>
+          <option value="online">Online</option>
+        </select>
+      </div>
+      <button class="btn btn-green" onclick="addClient()">Add to Roster</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CLIENT MODAL ══ -->
+<div class="modal-bg" id="modal" onclick="closeModalBg(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div class="modal-avatar" id="m-avatar">👤</div>
+      <div>
+        <div class="modal-name" id="m-name"></div>
+        <div class="modal-status" id="m-status"></div>
+      </div>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-cell"><div class="detail-label">Latitude</div><div class="detail-val" id="m-lat">—</div></div>
+      <div class="detail-cell"><div class="detail-label">Longitude</div><div class="detail-val" id="m-lng">—</div></div>
+      <div class="detail-cell"><div class="detail-label">Last Seen</div><div class="detail-val" id="m-seen">—</div></div>
+      <div class="detail-cell"><div class="detail-label">Status</div><div class="detail-val" id="m-stat2">—</div></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-dark btn-sm" onclick="compassTo()">🧭 Navigate</button>
+      <button class="btn btn-red btn-sm" onclick="markMissing()">🔴 Mark Missing</button>
+      <button class="btn btn-dark btn-sm" onclick="closeModal()">✕</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══ FIREBASE ══
+let db, fbRef, fbSet, fbOnValue, fbUpdate, fbPush, fbGet;
+let firebaseReady = false;
+let demoMode = false;
+
+async function initFirebase() {
+  try {
+    const app = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+    const db_ = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+    const firebaseApp = app.initializeApp({
+      apiKey: "AIzaSyC8sFeY5xd_SE0vWrG_zkq0fMAba-uugDY",
+      authDomain: "safetrack-b9fba.firebaseapp.com",
+      databaseURL: "https://safetrack-b9fba-default-rtdb.firebaseio.com",
+      projectId: "safetrack-b9fba",
+      storageBucket: "safetrack-b9fba.firebasestorage.app",
+      messagingSenderId: "91195086379",
+      appId: "1:91195086379:web:27a8d0dfff35f8621f3c6e"
+    });
+    db = db_.getDatabase(firebaseApp);
+    fbRef = db_.ref; fbSet = db_.set; fbOnValue = db_.onValue;
+    fbUpdate = db_.update; fbPush = db_.push; fbGet = db_.get;
+    firebaseReady = true;
+  } catch(e) {
+    // Firebase unavailable (local file) — run in demo mode
+    demoMode = true;
+    setupDemoMode();
+  }
+  show('s-landing');
+}
+initFirebase();
+
+// ══ DEMO MODE ══
+function setupDemoMode() {
+  // Stub Firebase functions so nothing crashes
+  fbRef = () => null;
+  fbSet = async () => {};
+  fbOnValue = () => () => {};
+  fbUpdate = async () => {};
+  fbPush = () => ({ key: 'demo-' + Date.now() });
+  fbGet = async () => ({ val: () => null });
+}
+
+const DEMO_CLIENTS = [
+  { id: 'd1', name: 'Marcus T.', status: 'online',   emoji: '😊', lat: 40.7128,  lng: -74.0060, lastSeen: Date.now() - 60000 },
+  { id: 'd2', name: 'Sarah K.',  status: 'online',   emoji: '😄', lat: 40.7148,  lng: -74.0040, lastSeen: Date.now() - 120000 },
+  { id: 'd3', name: 'James R.',  status: 'missing',  emoji: '😐', lat: 40.7108,  lng: -74.0080, lastSeen: Date.now() - 600000 },
+  { id: 'd4', name: 'Lena M.',   status: 'offline',  emoji: '🙂', lat: null,     lng: null,     lastSeen: Date.now() - 3600000 },
+  { id: 'd5', name: 'David W.',  status: 'online',   emoji: '😎', lat: 40.7168,  lng: -74.0020, lastSeen: Date.now() - 30000 },
+];
+
+// ══ STATE ══
+let orgCode = '';
+let staffName = '';
+let clientId = null;
+let clients = [];
+let selectedClient = null;
+let compassTarget = null;
+let staffGPS = null;
+let compassInterval = null;
+let gpsWatchId = null;
+let isSharing = true;
+let clientUnsubscribe = null;
+
+const EMOJIS = ['😊','😄','🙂','😎','🤔','😐','🙃','😀','🤩','😋'];
+
+// ══ SCREEN NAV ══
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function goStaff() { show('s-staff-login'); }
+function goClient() { show('s-client-join'); }
+
+function viewDemo() {
+  demoMode = true;
+  orgCode = 'DEMO';
+  staffName = 'Demo Staff';
+  document.getElementById('s-orgbadge').textContent = 'DEMO';
+  show('s-staff');
+  switchTab('roster');
+  subscribeClients();
+  startCompass();
+  toast('👀 Demo mode — tap around freely!', '');
+}
+
+// ══ STAFF LOGIN ══
+function staffLogin() {
+  const org = document.getElementById('staff-org').value.trim().toUpperCase();
+  const name = document.getElementById('staff-name').value.trim();
+  if (!org) { toast('Enter an org code', 'r'); return; }
+  if (!name) { toast('Enter your name', 'r'); return; }
+  orgCode = org;
+  staffName = name;
+  document.getElementById('s-orgbadge').textContent = demoMode ? org + ' · DEMO' : org;
+  show('s-staff');
+  switchTab('roster');
+  subscribeClients();
+  startCompass();
+  if (demoMode) toast('📡 Demo mode — tap around freely!', '');
+}
+
+// ══ CLIENT JOIN ══
+function clientJoin() {
+  const org = document.getElementById('client-org').value.trim().toUpperCase();
+  const name = document.getElementById('client-name').value.trim();
+  if (!org) { toast('Enter an org code', 'r'); return; }
+  if (!name) { toast('Enter your name', 'r'); return; }
+  if (!firebaseReady) { toast('Still connecting…', 'r'); return; }
+  orgCode = org;
+  document.getElementById('c-orgbadge').textContent = org;
+
+  // Register client in Firebase
+  const newRef = fbPush(fbRef(db, `orgs/${org}/clients`));
+  clientId = newRef.key;
+  fbSet(newRef, {
+    name, status: 'online',
+    emoji: EMOJIS[Math.floor(Math.random()*EMOJIS.length)],
+    lat: null, lng: null, lastSeen: Date.now()
+  });
+
+  show('s-client');
+  startGPS();
+  toast(`Joined ${org}`, 'g');
+}
+
+// ══ GPS SHARING (client) ══
+function startGPS() {
+  if (!navigator.geolocation) { toast('GPS not available', 'r'); return; }
+  gpsWatchId = navigator.geolocation.watchPosition(pos => {
+    if (!isSharing || !clientId) return;
+    const { latitude: lat, longitude: lng } = pos.coords;
+    document.getElementById('c-coords').textContent = `${lat.toFixed(5)}°, ${lng.toFixed(5)}°`;
+    if (firebaseReady) {
+      fbUpdate(fbRef(db, `orgs/${orgCode}/clients/${clientId}`), { lat, lng, lastSeen: Date.now(), status: 'online' });
+    }
+  }, err => {
+    document.getElementById('c-coords').textContent = 'GPS unavailable';
+  }, { enableHighAccuracy: true, maximumAge: 5000 });
+}
+
+function toggleSharing() {
+  isSharing = !isSharing;
+  const ring = document.getElementById('c-ring');
+  const label = document.getElementById('c-label');
+  const sub = document.getElementById('c-sub');
+  const btn = document.querySelector('#s-client .btn-dark');
+  if (isSharing) {
+    ring.className = 'pulse-ring sharing';
+    label.textContent = 'Sharing Location';
+    sub.textContent = 'Your location is being shared with your group.';
+    btn.textContent = 'Pause Sharing';
+    if (firebaseReady && clientId) fbUpdate(fbRef(db, `orgs/${orgCode}/clients/${clientId}`), { status: 'online' });
+  } else {
+    ring.className = 'pulse-ring';
+    label.textContent = 'Sharing Paused';
+    sub.textContent = 'Your staff cannot see your location right now.';
+    btn.textContent = 'Resume Sharing';
+    if (firebaseReady && clientId) fbUpdate(fbRef(db, `orgs/${orgCode}/clients/${clientId}`), { status: 'offline' });
+  }
+}
+
+function clientLeave() {
+  if (gpsWatchId) navigator.geolocation.clearWatch(gpsWatchId);
+  if (firebaseReady && clientId) fbUpdate(fbRef(db, `orgs/${orgCode}/clients/${clientId}`), { status: 'offline' });
+  clientId = null;
+  orgCode = '';
+  show('s-landing');
+}
+
+// ══ SUBSCRIBE CLIENTS (staff) ══
+function subscribeClients() {
+  if (demoMode) {
+    clients = DEMO_CLIENTS.map(c => ({...c}));
+    renderRoster(); renderMap(); renderCompassTargets();
+    setInterval(() => { clients.forEach(c => { if (c.status==="online") c.lastSeen = Date.now() - Math.random()*120000; }); renderRoster(); }, 5000);
+    return;
+  }
+  if (!firebaseReady) { setTimeout(subscribeClients, 500); return; }
+  if (clientUnsubscribe) clientUnsubscribe();
+  const r = fbRef(db, `orgs/${orgCode}/clients`);
+  clientUnsubscribe = fbOnValue(r, snap => {
+    const data = snap.val() || {};
+    clients = Object.entries(data).map(([id, c]) => ({ id, ...c }));
+    renderRoster(); renderMap(); renderCompassTargets();
+  });
+}
+
+// ══ ROSTER ══
+function renderRoster() {
+  const list = document.getElementById('client-list');
+  const online = clients.filter(c => c.status === 'online').length;
+  const missing = clients.filter(c => c.status === 'missing').length;
+  document.getElementById('cnt-online').textContent = online;
+  document.getElementById('cnt-missing').textContent = missing;
+  document.getElementById('cnt-total').textContent = clients.length;
+
+  if (clients.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">No clients yet. Add one in the Add tab.</div></div>`;
+    return;
+  }
+
+  list.innerHTML = clients.map(c => {
+    const dotClass = c.status === 'online' ? 'on' : c.status === 'missing' ? 'miss' : 'off';
+    const statusText = c.status === 'online' ? 'Sharing location' : c.status === 'missing' ? 'MISSING' : 'Offline';
+    const statusClass = c.status === 'online' ? 'g' : c.status === 'missing' ? 'r' : '';
+    const ago = c.lastSeen ? timeAgo(c.lastSeen) : '—';
+    return `
+      <div class="client-row ${c.status}" onclick="openModal('${c.id}')">
+        <div class="av">${c.emoji||'👤'}<div class="av-dot ${dotClass}"></div></div>
+        <div class="row-info">
+          <div class="row-name">${c.name}</div>
+          <div class="row-status ${statusClass}">${statusText}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+          <div class="row-time">${ago}</div>
+          ${c.status==='missing'?'<div class="missing-badge">MISSING</div>':''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ══ MAP ══
+const PIN_POS = [
+  {left:'22%',top:'28%'},{left:'62%',top:'32%'},{left:'38%',top:'60%'},
+  {left:'72%',top:'58%'},{left:'18%',top:'52%'},{left:'52%',top:'22%'},
+  {left:'44%',top:'42%'},{left:'78%',top:'38%'},{left:'30%',top:'72%'},{left:'60%',top:'68%'}
+];
+
+function renderMap() {
+  const container = document.getElementById('map-pins');
+  const empty = document.getElementById('map-empty');
+  const visible = clients.filter(c => c.status !== 'offline');
+  empty.style.display = visible.length === 0 ? 'flex' : 'none';
+  container.innerHTML = visible.map((c, i) => {
+    const pos = PIN_POS[i % PIN_POS.length];
+    const col = c.status === 'online' ? 'g' : c.status === 'missing' ? 'r' : 'o';
+    return `
+      <div class="pin" style="left:${pos.left};top:${pos.top};" onclick="openModal('${c.id}')">
+        <div class="pin-bubble ${col}"><span class="pin-emoji">${c.emoji||'👤'}</span></div>
+        <div class="pin-name">${c.name.split(' ')[0]}</div>
+      </div>`;
+  }).join('');
+}
+
+// ══ COMPASS ══
+function startCompass() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(p => {
+      staffGPS = { lat: p.coords.latitude, lng: p.coords.longitude };
+    });
+  }
+  compassInterval = setInterval(updateCompass, 1000);
+}
+
+function renderCompassTargets() {
+  const wrap = document.getElementById('compass-targets');
+  if (clients.length === 0) {
+    wrap.innerHTML = '<div style="color:var(--muted);font-size:13px;">No clients yet</div>';
+    return;
+  }
+  wrap.innerHTML = clients.map(c => `
+    <div class="target-chip ${compassTarget?.id===c.id?'selected':''} ${c.status==='missing'?'miss':''}"
+         onclick="setCompassTarget('${c.id}')">
+      ${c.status==='missing'?'🔴 ':''}${c.name.split(' ')[0]}
+    </div>`).join('');
+}
+
+function setCompassTarget(id) {
+  compassTarget = clients.find(c => c.id === id);
+  renderCompassTargets();
+  updateCompass();
+}
+
+function updateCompass() {
+  if (!compassTarget || !compassTarget.lat) {
+    document.getElementById('compass-dist').textContent = '—';
+    document.getElementById('compass-to').textContent = compassTarget ? 'No GPS for this client yet' : 'Select a client above';
+    return;
+  }
+  const myLat = staffGPS?.lat ?? (compassTarget.lat + (Math.random()*0.002-0.001));
+  const myLng = staffGPS?.lng ?? (compassTarget.lng + (Math.random()*0.002-0.001));
+  const bearing = getBearing(myLat, myLng, compassTarget.lat, compassTarget.lng);
+  const dist = getDist(myLat, myLng, compassTarget.lat, compassTarget.lng);
+  document.getElementById('needle').style.transform = `rotate(${bearing}deg)`;
+  document.getElementById('compass-dist').textContent = dist < 1000 ? Math.round(dist)+'m' : (dist/1000).toFixed(2)+'km';
+  document.getElementById('compass-to').textContent = `to ${compassTarget.name}`;
+}
+
+function getBearing(lat1,lng1,lat2,lng2) {
+  const dL = (lng2-lng1)*Math.PI/180;
+  const y = Math.sin(dL)*Math.cos(lat2*Math.PI/180);
+  const x = Math.cos(lat1*Math.PI/180)*Math.sin(lat2*Math.PI/180) - Math.sin(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.cos(dL);
+  return (Math.atan2(y,x)*180/Math.PI+360)%360;
+}
+function getDist(lat1,lng1,lat2,lng2) {
+  const R=6371000, dLat=(lat2-lat1)*Math.PI/180, dLng=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+// ══ ADD CLIENT ══
+function addClient() {
+  const name = document.getElementById('new-name').value.trim();
+  const status = document.getElementById('new-status').value;
+  if (!name) { toast('Enter a name', 'r'); return; }
+  const newClient = { id: 'local-'+Date.now(), name, status, emoji: EMOJIS[Math.floor(Math.random()*EMOJIS.length)], lat: null, lng: null, lastSeen: Date.now() };
+  if (demoMode) {
+    clients.push(newClient); renderRoster(); renderMap(); renderCompassTargets();
+  } else {
+    if (!firebaseReady) { toast('Still connecting…', 'r'); return; }
+    const r = fbPush(fbRef(db, `orgs/${orgCode}/clients`));
+    fbSet(r, { name, status, emoji: newClient.emoji, lat: null, lng: null, lastSeen: Date.now() });
+  }
+  document.getElementById('new-name').value = '';
+  toast(`✅ ${name} added`, 'g');
+  switchTab('roster');
+}
+
+// ══ MODAL ══
+function openModal(id) {
+  selectedClient = clients.find(c => c.id === id);
+  if (!selectedClient) return;
+  const c = selectedClient;
+  document.getElementById('m-avatar').textContent = c.emoji || '👤';
+  document.getElementById('m-name').textContent = c.name;
+  const statusTxt = c.status === 'online' ? '🟢 Online & sharing' : c.status === 'missing' ? '🔴 Missing' : '⚪ Offline';
+  const el = document.getElementById('m-status');
+  el.textContent = statusTxt;
+  el.className = 'modal-status ' + (c.status==='online'?'g':c.status==='missing'?'r':'');
+  document.getElementById('m-lat').textContent = c.lat ? c.lat.toFixed(5)+'°' : '—';
+  document.getElementById('m-lng').textContent = c.lng ? c.lng.toFixed(5)+'°' : '—';
+  document.getElementById('m-seen').textContent = c.lastSeen ? timeAgo(c.lastSeen) : '—';
+  document.getElementById('m-stat2').textContent = c.status.charAt(0).toUpperCase()+c.status.slice(1);
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function closeModalBg(e) { if (e.target === document.getElementById('modal')) closeModal(); }
+
+function markMissing() {
+  if (!selectedClient) return;
+  if (demoMode) {
+    const c = clients.find(c => c.id === selectedClient.id);
+    if (c) c.status = 'missing';
+    renderRoster(); renderMap(); renderCompassTargets();
+  } else {
+    fbUpdate(fbRef(db, `orgs/${orgCode}/clients/${selectedClient.id}`), { status: 'missing' });
+  }
+  toast(`🔴 ${selectedClient.name} marked missing`, 'r');
+  closeModal();
+}
+
+function compassTo() {
+  if (!selectedClient) return;
+  closeModal();
+  compassTarget = selectedClient;
+  switchTab('compass');
+  renderCompassTargets();
+  updateCompass();
+  toast(`🧭 Navigating to ${selectedClient.name}`, 'g');
+}
+
+// ══ TAB SWITCHING ══
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+  if (name === 'map') renderMap();
+  if (name === 'compass') { renderCompassTargets(); updateCompass(); }
+}
+
+// ══ LEAVE ══
+function staffLeave() {
+  if (clientUnsubscribe) clientUnsubscribe();
+  if (compassInterval) clearInterval(compassInterval);
+  orgCode = ''; clients = [];
+  show('s-landing');
+}
+
+// ══ UTILS ══
+let toastTimer;
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = type==='g'?'rgba(0,229,160,0.3)':type==='r'?'rgba(244,63,94,0.3)':'var(--border)';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function timeAgo(ts) {
+  const s = Math.floor((Date.now()-ts)/1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s/60)+'m ago';
+  if (s < 86400) return Math.floor(s/3600)+'h ago';
+  return Math.floor(s/86400)+'d ago';
+}
+</script>
+</body>
+</html>
