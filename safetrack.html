@@ -702,13 +702,50 @@ function renderMap() {
 }
 
 // ══ COMPASS ══
+let deviceHeading = null; // degrees from north the phone is facing
+
 function startCompass() {
+  // Get GPS
   if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(p => {
+    navigator.geolocation.watchPosition(p => {
       staffGPS = { lat: p.coords.latitude, lng: p.coords.longitude };
-    });
+      updateCompass();
+    }, null, { enableHighAccuracy: true, maximumAge: 3000 });
   }
-  compassInterval = setInterval(updateCompass, 1000);
+
+  // Get device orientation (compass heading)
+  if (window.DeviceOrientationEvent) {
+    // iOS 13+ requires permission
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+      // We'll request on user tap — add a button hint
+      document.getElementById('compass-to').textContent = 'Tap needle to enable compass';
+      document.getElementById('needle').style.cursor = 'pointer';
+      document.getElementById('needle').onclick = async () => {
+        try {
+          const perm = await DeviceOrientationEvent.requestPermission();
+          if (perm === 'granted') listenOrientation();
+        } catch(e) {}
+      };
+    } else {
+      listenOrientation();
+    }
+  }
+
+  compassInterval = setInterval(updateCompass, 500);
+}
+
+function listenOrientation() {
+  window.addEventListener('deviceorientationabsolute', e => {
+    if (e.absolute && e.alpha !== null) deviceHeading = e.alpha;
+  }, true);
+  window.addEventListener('deviceorientation', e => {
+    // webkitCompassHeading is iOS-specific and most reliable
+    if (e.webkitCompassHeading !== undefined) {
+      deviceHeading = e.webkitCompassHeading;
+    } else if (e.absolute && e.alpha !== null) {
+      deviceHeading = (360 - e.alpha) % 360;
+    }
+  }, true);
 }
 
 function renderCompassTargets() {
@@ -736,14 +773,21 @@ function updateCompass() {
     document.getElementById('compass-to').textContent = compassTarget ? 'No GPS for this client yet' : 'Select a client above';
     return;
   }
-  const myLat = staffGPS?.lat ?? (compassTarget.lat + (Math.random()*0.002-0.001));
-  const myLng = staffGPS?.lng ?? (compassTarget.lng + (Math.random()*0.002-0.001));
+  const myLat = staffGPS?.lat ?? compassTarget.lat;
+  const myLng = staffGPS?.lng ?? compassTarget.lng;
+  if (!staffGPS) { document.getElementById('compass-to').textContent = 'Waiting for your GPS...'; return; }
+
   const bearing = getBearing(myLat, myLng, compassTarget.lat, compassTarget.lng);
   const dist = getDist(myLat, myLng, compassTarget.lat, compassTarget.lng);
-  document.getElementById('needle').style.transform = `rotate(${bearing}deg)`;
+
+  // Adjust bearing by phone heading so needle points the right direction
+  const heading = deviceHeading ?? 0;
+  const adjustedBearing = (bearing - heading + 360) % 360;
+
+  document.getElementById('needle').style.transform = `rotate(${adjustedBearing}deg)`;
   const feet = dist * 3.28084;
   document.getElementById('compass-dist').textContent = feet < 5280 ? Math.round(feet)+' ft' : (feet/5280).toFixed(2)+' mi';
-  document.getElementById('compass-to').textContent = `to ${compassTarget.name}`;
+  document.getElementById('compass-to').textContent = `to ${compassTarget.name}${deviceHeading === null ? ' (hold phone flat)' : ''}`;
 }
 
 function getBearing(lat1,lng1,lat2,lng2) {
