@@ -958,6 +958,45 @@ function timeAgo(ts) {
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
 }
+
+// ══ BACK BUTTON HANDLING ══
+function pushHistory() {
+  history.pushState({ page: currentScreen }, '', '');
+}
+
+window.addEventListener('popstate', (e) => {
+  const screen = document.querySelector('.screen.active')?.id;
+  if (screen === 's-staff') {
+    // If modal is open, close it
+    if (document.getElementById('modal').classList.contains('open')) {
+      closeModal();
+      history.pushState({}, '');
+      return;
+    }
+    // Otherwise go back to landing
+    staffLeave();
+  } else if (screen === 's-client') {
+    clientLeave();
+  } else if (screen === 's-staff-login' || screen === 's-client-join') {
+    show('s-landing');
+  } else {
+    // Already on landing, let browser handle it
+  }
+  history.pushState({}, '');
+});
+
+// Push state whenever we navigate to a new screen
+const _origShow = show;
+window.show = function(id) {
+  _origShow(id);
+  if (id !== 's-landing') {
+    history.pushState({ page: id }, '');
+  }
+};
+
+// Init with a history entry
+history.pushState({}, '');
+
 </script>
 </body>
 </html>
