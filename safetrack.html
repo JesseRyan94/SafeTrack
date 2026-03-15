@@ -276,6 +276,10 @@ select option { background: var(--card); }
       <label>Your Name</label>
       <input id="staff-name" type="text" placeholder="Your name">
     </div>
+    <div class="input-group">
+      <div class="emoji-label">Your Icon</div>
+      <div class="emoji-grid" id="staff-emoji-grid"></div>
+    </div>
     <button class="btn btn-green" style="margin-top:8px;" onclick="staffLogin()">Enter Dashboard</button>
   </div>
 </div>
@@ -324,7 +328,7 @@ select option { background: var(--card); }
 <div id="s-staff" class="screen">
   <div class="staff-header">
     <div style="font-family:'Space Mono',monospace;font-size:16px;font-weight:700;">Safe<span style="color:var(--green)">Track</span></div>
-    <div id="s-orgbadge" class="header-org"></div>
+    <div style="display:flex;align-items:center;gap:8px;"><span id="staff-emoji-badge" style="font-size:20px;">😊</span><div id="s-orgbadge" class="header-org"></div></div>
   </div>
 
   <div class="tab-bar">
@@ -513,6 +517,24 @@ const EMOJIS = ['😊','😄','🙂','😎','🤔','😐','🙃','😀','🤩','
   '🧑','👦','👧','👨','👩','🧔','👴','👵','🧒','🙋',
   '🚶','🏃','💪','🌟','⭐','🔵','🟢','🔴','🟡','🟠'];
 let selectedEmoji = EMOJIS[0];
+let staffEmoji = EMOJIS[0];
+
+function initStaffEmojiGrid() {
+  const grid = document.getElementById('staff-emoji-grid');
+  if (!grid) return;
+  grid.innerHTML = EMOJIS.map((e, i) => `
+    <div class="emoji-opt ${i===0?'selected':''}" onclick="selectStaffEmoji(this, '${e}')">${e}</div>
+  `).join('');
+}
+
+function selectStaffEmoji(el, emoji) {
+  document.querySelectorAll('#staff-emoji-grid .emoji-opt').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  staffEmoji = emoji;
+  // Update header badge if already logged in
+  const badge = document.getElementById('staff-emoji-badge');
+  if (badge) badge.textContent = emoji;
+}
 
 function initEmojiGrid() {
   const grid = document.getElementById('emoji-grid');
@@ -534,7 +556,7 @@ function show(id) {
   document.getElementById(id).classList.add('active');
 }
 
-function goStaff() { show('s-staff-login'); }
+function goStaff() { show('s-staff-login'); setTimeout(initStaffEmojiGrid, 50); }
 function goClient() { show('s-client-join'); }
 
 function viewDemo() {
@@ -558,6 +580,7 @@ function staffLogin() {
   orgCode = org;
   staffName = name;
   document.getElementById('s-orgbadge').textContent = demoMode ? org + ' · DEMO' : org;
+  document.getElementById('staff-emoji-badge').textContent = staffEmoji;
   show('s-staff');
   switchTab('roster');
   subscribeClients();
