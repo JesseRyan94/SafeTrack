@@ -380,6 +380,7 @@ select option { background: var(--card); }
         <div class="compass-dist" id="compass-dist">—</div>
         <div class="compass-to" id="compass-to">Select a client above</div>
         <div class="compass-accuracy" id="compass-accuracy"></div>
+        <button id="enable-compass-btn" class="btn btn-dark btn-sm" style="display:none;margin-top:12px;border-color:rgba(0,229,160,0.3);color:var(--green);" onclick="requestCompassPermission()">🧭 Enable Compass</button>
       </div>
     </div>
   </div>
@@ -740,16 +741,10 @@ function startCompass() {
     }, null, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
   }
 
-  // Request orientation permission on iOS
+  // iOS requires explicit user gesture to get orientation permission
   if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
-    document.getElementById('compass-to').textContent = 'Tap to enable compass';
-    document.getElementById('needle').style.cursor = 'pointer';
-    document.getElementById('needle').onclick = async () => {
-      try {
-        const perm = await DeviceOrientationEvent.requestPermission();
-        if (perm === 'granted') { listenOrientation(); document.getElementById('needle').onclick = null; }
-      } catch(e) {}
-    };
+    document.getElementById('enable-compass-btn').style.display = 'block';
+    document.getElementById('compass-accuracy').textContent = 'Tap "Enable Compass" to start';
   } else {
     listenOrientation();
   }
@@ -758,24 +753,36 @@ function startCompass() {
 }
 
 function listenOrientation() {
-  // Try absolute orientation first (most accurate on Android)
+  let hasAbsolute = false;
+
   window.addEventListener('deviceorientationabsolute', e => {
     if (e.alpha !== null) {
+      hasAbsolute = true;
       deviceHeading = (360 - e.alpha) % 360;
       lastOrientationTime = Date.now();
     }
   }, true);
 
   window.addEventListener('deviceorientation', e => {
+    if (hasAbsolute) return;
     if (e.webkitCompassHeading !== undefined && e.webkitCompassHeading !== null) {
-      // iOS compass heading — most reliable
       deviceHeading = e.webkitCompassHeading;
-      lastOrientationTime = Date.now();
-    } else if (!lastOrientationTime && e.alpha !== null) {
-      deviceHeading = (360 - e.alpha) % 360;
       lastOrientationTime = Date.now();
     }
   }, true);
+}
+
+async function requestCompassPermission() {
+  try {
+    const perm = await DeviceOrientationEvent.requestPermission();
+    if (perm === 'granted') {
+      listenOrientation();
+      document.getElementById('enable-compass-btn').style.display = 'none';
+      document.getElementById('compass-accuracy').textContent = '✓ Compass enabled';
+    }
+  } catch(e) {
+    document.getElementById('compass-accuracy').textContent = 'Could not enable compass';
+  }
 }
 
 function smoothAngle(current, target, factor) {
