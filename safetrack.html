@@ -220,6 +220,12 @@ select option { background: var(--card); }
 #leaflet-map { flex: 1; width: 100%; min-height: 400px; }
 .map-label { background: rgba(10,15,30,0.9); border: 1px solid rgba(255,255,255,0.08); color: #f1f5f9; font-family: Outfit,sans-serif; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px; box-shadow: none; }
 .leaflet-container { background: #1a2235; }
+/* ── EMOJI PICKER ── */
+.emoji-label { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.emoji-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.emoji-opt { width: 44px; height: 44px; border-radius: 10px; background: var(--card); border: 2px solid var(--border); font-size: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; }
+.emoji-opt.selected { border-color: var(--green); background: rgba(0,229,160,0.1); transform: scale(1.1); }
+.emoji-opt:active { transform: scale(0.95); }
 /* ── TOAST ── */
 .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--card2); border: 1px solid var(--border); color: var(--text); padding: 12px 20px; border-radius: 100px; font-size: 14px; font-weight: 500; z-index: 999; transition: transform 0.3s ease; white-space: nowrap; }
 .toast.show { transform: translateX(-50%) translateY(0); }
@@ -400,6 +406,10 @@ select option { background: var(--card); }
           <option value="online">Online</option>
         </select>
       </div>
+      <div class="input-group">
+        <div class="emoji-label">Choose Icon</div>
+        <div class="emoji-grid" id="emoji-grid"></div>
+      </div>
       <button class="btn btn-green" onclick="addClient()">Add to Roster</button>
     </div>
   </div>
@@ -499,7 +509,24 @@ let gpsWatchId = null;
 let isSharing = true;
 let clientUnsubscribe = null;
 
-const EMOJIS = ['😊','😄','🙂','😎','🤔','😐','🙃','😀','🤩','😋'];
+const EMOJIS = ['😊','😄','🙂','😎','🤔','😐','🙃','😀','🤩','😋',
+  '🧑','👦','👧','👨','👩','🧔','👴','👵','🧒','🙋',
+  '🚶','🏃','💪','🌟','⭐','🔵','🟢','🔴','🟡','🟠'];
+let selectedEmoji = EMOJIS[0];
+
+function initEmojiGrid() {
+  const grid = document.getElementById('emoji-grid');
+  if (!grid) return;
+  grid.innerHTML = EMOJIS.map((e, i) => `
+    <div class="emoji-opt ${i===0?'selected':''}" onclick="selectEmoji(this, '${e}')">${e}</div>
+  `).join('');
+}
+
+function selectEmoji(el, emoji) {
+  document.querySelectorAll('.emoji-opt').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedEmoji = emoji;
+}
 
 // ══ SCREEN NAV ══
 function show(id) {
@@ -866,15 +893,17 @@ function addClient() {
   const name = document.getElementById('new-name').value.trim();
   const status = document.getElementById('new-status').value;
   if (!name) { toast('Enter a name', 'r'); return; }
-  const newClient = { id: 'local-'+Date.now(), name, status, emoji: EMOJIS[Math.floor(Math.random()*EMOJIS.length)], lat: null, lng: null, lastSeen: Date.now() };
+  const newClient = { id: 'local-'+Date.now(), name, status, emoji: selectedEmoji, lat: null, lng: null, lastSeen: Date.now() };
   if (demoMode) {
     clients.push(newClient); renderRoster(); renderMap(); renderCompassTargets();
   } else {
     if (!firebaseReady) { toast('Still connecting…', 'r'); return; }
     const r = fbPush(fbRef(db, `orgs/${orgCode}/clients`));
-    fbSet(r, { name, status, emoji: newClient.emoji, lat: null, lng: null, lastSeen: Date.now() });
+    fbSet(r, { name, status, emoji: selectedEmoji, lat: null, lng: null, lastSeen: Date.now() });
   }
   document.getElementById('new-name').value = '';
+  selectedEmoji = EMOJIS[0];
+  initEmojiGrid();
   toast(`✅ ${name} added`, 'g');
   switchTab('roster');
 }
@@ -968,6 +997,7 @@ function switchTab(name) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   document.getElementById('panel-'+name).classList.add('active');
+  if (name === 'add') initEmojiGrid();
   if (name === 'map') {
     if (!mapInitialized) {
       if (typeof L !== 'undefined') {
