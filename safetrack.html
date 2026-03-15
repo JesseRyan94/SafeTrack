@@ -178,14 +178,27 @@ select option { background: var(--card); }
 .target-chip { padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; background: var(--card); border: 1px solid var(--border); cursor: pointer; transition: all 0.18s; }
 .target-chip.selected { background: rgba(0,229,160,0.15); border-color: var(--green); color: var(--green); }
 .target-chip.miss { border-color: rgba(244,63,94,0.4); color: var(--red); }
-.compass-dial { width: 200px; height: 200px; border-radius: 50%; border: 2px solid var(--border); position: relative; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle, var(--card2) 0%, var(--card) 100%); }
-.compass-dial::before { content: 'N'; position: absolute; top: 10px; font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; color: var(--muted); }
-.compass-dial::after { content: 'S'; position: absolute; bottom: 10px; font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; color: var(--muted); }
-.needle { width: 4px; height: 80px; position: relative; transition: transform 0.5s ease; }
-.needle-top { width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 44px solid var(--red); margin: 0 auto; }
-.needle-bot { width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 44px solid var(--green); margin: 0 auto; }
-.compass-dist { font-family: 'Space Mono', monospace; font-size: 32px; font-weight: 700; color: var(--green); }
-.compass-to { font-size: 14px; color: var(--muted); }
+.compass-outer { position: relative; width: 240px; height: 240px; }
+.compass-ring {
+  width: 240px; height: 240px; border-radius: 50%;
+  border: 2px solid var(--border);
+  background: radial-gradient(circle at center, var(--card2) 0%, var(--card) 100%);
+  position: relative; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 0 8px rgba(0,229,160,0.04), inset 0 0 40px rgba(0,0,0,0.3);
+}
+.compass-cardinal { position: absolute; font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; color: var(--muted); }
+.compass-cardinal.n { top: 10px; left: 50%; transform: translateX(-50%); color: var(--green); }
+.compass-cardinal.s { bottom: 10px; left: 50%; transform: translateX(-50%); }
+.compass-cardinal.e { right: 12px; top: 50%; transform: translateY(-50%); }
+.compass-cardinal.w { left: 12px; top: 50%; transform: translateY(-50%); }
+.compass-center { display: flex; align-items: center; justify-content: center; }
+.needle { width: 4px; height: 100px; position: relative; transition: transform 0.15s ease-out; }
+.needle-top { width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 54px solid var(--green); margin: 0 auto; filter: drop-shadow(0 0 6px var(--green)); }
+.needle-bot { width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 54px solid var(--red); margin: 0 auto; }
+.compass-info { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.compass-dist { font-family: 'Space Mono', monospace; font-size: 36px; font-weight: 700; color: var(--green); line-height: 1; }
+.compass-to { font-size: 15px; color: var(--text); font-weight: 600; }
+.compass-accuracy { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
 /* ── MODAL ── */
 .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: flex-end; backdrop-filter: blur(4px); }
@@ -346,15 +359,27 @@ select option { background: var(--card); }
   <div class="tab-panel" id="panel-compass">
     <div class="compass-wrap">
       <div class="compass-targets" id="compass-targets"></div>
-      <div class="compass-dial">
-        <div id="needle" class="needle" style="transform:rotate(0deg);">
-          <div class="needle-top"></div>
-          <div class="needle-bot"></div>
+
+      <!-- Compass ring -->
+      <div class="compass-outer">
+        <div class="compass-ring">
+          <div class="compass-cardinal n">N</div>
+          <div class="compass-cardinal s">S</div>
+          <div class="compass-cardinal e">E</div>
+          <div class="compass-cardinal w">W</div>
+          <div class="compass-center">
+            <div id="needle" class="needle" style="transform:rotate(0deg);">
+              <div class="needle-top"></div>
+              <div class="needle-bot"></div>
+            </div>
+          </div>
         </div>
       </div>
-      <div>
+
+      <div class="compass-info">
         <div class="compass-dist" id="compass-dist">—</div>
         <div class="compass-to" id="compass-to">Select a client above</div>
+        <div class="compass-accuracy" id="compass-accuracy"></div>
       </div>
     </div>
   </div>
@@ -702,50 +727,64 @@ function renderMap() {
 }
 
 // ══ COMPASS ══
-let deviceHeading = null; // degrees from north the phone is facing
+let deviceHeading = null;
+let smoothedBearing = null;
+let lastOrientationTime = 0;
 
 function startCompass() {
-  // Get GPS
+  // High frequency GPS watch
   if (navigator.geolocation) {
     navigator.geolocation.watchPosition(p => {
       staffGPS = { lat: p.coords.latitude, lng: p.coords.longitude };
       updateCompass();
-    }, null, { enableHighAccuracy: true, maximumAge: 3000 });
+    }, null, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
   }
 
-  // Get device orientation (compass heading)
-  if (window.DeviceOrientationEvent) {
-    // iOS 13+ requires permission
-    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-      // We'll request on user tap — add a button hint
-      document.getElementById('compass-to').textContent = 'Tap needle to enable compass';
-      document.getElementById('needle').style.cursor = 'pointer';
-      document.getElementById('needle').onclick = async () => {
-        try {
-          const perm = await DeviceOrientationEvent.requestPermission();
-          if (perm === 'granted') listenOrientation();
-        } catch(e) {}
-      };
-    } else {
-      listenOrientation();
-    }
+  // Request orientation permission on iOS
+  if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    document.getElementById('compass-to').textContent = 'Tap to enable compass';
+    document.getElementById('needle').style.cursor = 'pointer';
+    document.getElementById('needle').onclick = async () => {
+      try {
+        const perm = await DeviceOrientationEvent.requestPermission();
+        if (perm === 'granted') { listenOrientation(); document.getElementById('needle').onclick = null; }
+      } catch(e) {}
+    };
+  } else {
+    listenOrientation();
   }
 
-  compassInterval = setInterval(updateCompass, 500);
+  compassInterval = setInterval(updateCompass, 100); // 10x per second
 }
 
 function listenOrientation() {
+  // Try absolute orientation first (most accurate on Android)
   window.addEventListener('deviceorientationabsolute', e => {
-    if (e.absolute && e.alpha !== null) deviceHeading = e.alpha;
-  }, true);
-  window.addEventListener('deviceorientation', e => {
-    // webkitCompassHeading is iOS-specific and most reliable
-    if (e.webkitCompassHeading !== undefined) {
-      deviceHeading = e.webkitCompassHeading;
-    } else if (e.absolute && e.alpha !== null) {
+    if (e.alpha !== null) {
       deviceHeading = (360 - e.alpha) % 360;
+      lastOrientationTime = Date.now();
     }
   }, true);
+
+  window.addEventListener('deviceorientation', e => {
+    if (e.webkitCompassHeading !== undefined && e.webkitCompassHeading !== null) {
+      // iOS compass heading — most reliable
+      deviceHeading = e.webkitCompassHeading;
+      lastOrientationTime = Date.now();
+    } else if (!lastOrientationTime && e.alpha !== null) {
+      deviceHeading = (360 - e.alpha) % 360;
+      lastOrientationTime = Date.now();
+    }
+  }, true);
+}
+
+function smoothAngle(current, target, factor) {
+  if (current === null) return target;
+  let diff = target - current;
+  // Handle wrap-around (e.g. 350 -> 10)
+  if (diff > 180) diff -= 360;
+  if (diff < -180) diff += 360;
+  return (current + diff * factor + 360) % 360;
 }
 
 function renderCompassTargets() {
@@ -771,23 +810,36 @@ function updateCompass() {
   if (!compassTarget || !compassTarget.lat) {
     document.getElementById('compass-dist').textContent = '—';
     document.getElementById('compass-to').textContent = compassTarget ? 'No GPS for this client yet' : 'Select a client above';
+    document.getElementById('compass-accuracy').textContent = '';
     return;
   }
-  const myLat = staffGPS?.lat ?? compassTarget.lat;
-  const myLng = staffGPS?.lng ?? compassTarget.lng;
-  if (!staffGPS) { document.getElementById('compass-to').textContent = 'Waiting for your GPS...'; return; }
+  if (!staffGPS) {
+    document.getElementById('compass-to').textContent = 'Waiting for your GPS...';
+    return;
+  }
 
-  const bearing = getBearing(myLat, myLng, compassTarget.lat, compassTarget.lng);
-  const dist = getDist(myLat, myLng, compassTarget.lat, compassTarget.lng);
+  const bearing = getBearing(staffGPS.lat, staffGPS.lng, compassTarget.lat, compassTarget.lng);
+  const dist = getDist(staffGPS.lat, staffGPS.lng, compassTarget.lat, compassTarget.lng);
 
-  // Adjust bearing by phone heading so needle points the right direction
+  // Adjust for phone heading
   const heading = deviceHeading ?? 0;
-  const adjustedBearing = (bearing - heading + 360) % 360;
+  const rawBearing = (bearing - heading + 360) % 360;
 
-  document.getElementById('needle').style.transform = `rotate(${adjustedBearing}deg)`;
+  // Smooth the needle — fast response (0.3 factor) for crowd use
+  smoothedBearing = smoothAngle(smoothedBearing, rawBearing, 0.3);
+
+  document.getElementById('needle').style.transform = `rotate(${smoothedBearing}deg)`;
+
   const feet = dist * 3.28084;
   document.getElementById('compass-dist').textContent = feet < 5280 ? Math.round(feet)+' ft' : (feet/5280).toFixed(2)+' mi';
-  document.getElementById('compass-to').textContent = `to ${compassTarget.name}${deviceHeading === null ? ' (hold phone flat)' : ''}`;
+  document.getElementById('compass-to').textContent = compassTarget.name;
+
+  // Accuracy hint
+  const stale = Date.now() - lastOrientationTime > 2000;
+  document.getElementById('compass-accuracy').textContent = 
+    deviceHeading === null ? '⚠️ Hold phone flat for compass' :
+    stale ? '⚠️ Compass signal weak' :
+    '✓ Compass active';
 }
 
 function getBearing(lat1,lng1,lat2,lng2) {
