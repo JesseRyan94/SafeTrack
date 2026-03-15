@@ -328,7 +328,11 @@ select option { background: var(--card); }
 <div id="s-staff" class="screen">
   <div class="staff-header">
     <div style="font-family:'Space Mono',monospace;font-size:16px;font-weight:700;">Safe<span style="color:var(--green)">Track</span></div>
-    <div style="display:flex;align-items:center;gap:8px;"><span id="staff-emoji-badge" style="font-size:20px;">😊</span><div id="s-orgbadge" class="header-org"></div></div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span id="staff-emoji-badge" style="font-size:20px;cursor:pointer;" onclick="showStaffPhoto()">😊</span>
+      <div id="s-orgbadge" class="header-org"></div>
+      <button class="btn btn-dark btn-sm" style="font-size:12px;padding:6px 12px;" onclick="staffLeave()">Leave</button>
+    </div>
   </div>
 
   <div class="tab-bar">
@@ -350,7 +354,6 @@ select option { background: var(--card); }
   <div class="tab-panel active" id="panel-roster">
     <div class="roster-head">
       <h3>Clients</h3>
-      <button class="btn btn-dark btn-sm" onclick="staffLeave()">Leave</button>
     </div>
     <div class="stats-row">
       <div class="stat"><div class="stat-n g" id="cnt-online">0</div><div class="stat-l">Online</div></div>
@@ -404,6 +407,16 @@ select option { background: var(--card); }
         <input id="new-name" type="text" placeholder="Full name">
       </div>
       <div class="input-group">
+        <label>Photo (optional)</label>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div id="new-photo-preview" style="width:52px;height:52px;border-radius:12px;background:var(--card2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;flex-shrink:0;">📷</div>
+          <label style="text-transform:none;font-size:14px;font-weight:500;color:var(--green);cursor:pointer;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:8px;padding:8px 14px;">
+            Upload Photo
+            <input type="file" accept="image/*" style="display:none;" onchange="handleNewClientPhoto(this)">
+          </label>
+        </div>
+      </div>
+      <div class="input-group">
         <label>Initial Status</label>
         <select id="new-status">
           <option value="offline">Offline</option>
@@ -416,6 +429,22 @@ select option { background: var(--card); }
       </div>
       <button class="btn btn-green" onclick="addClient()">Add to Roster</button>
     </div>
+  </div>
+</div>
+
+<!-- ══ STAFF PHOTO MODAL ══ -->
+<div class="modal-bg" id="staff-photo-modal" onclick="closeStaffPhotoModal(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="font-size:16px;font-weight:700;margin-bottom:8px;">Your Profile</div>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+      <div id="staff-photo-preview" style="width:64px;height:64px;border-radius:16px;background:var(--card2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:32px;overflow:hidden;flex-shrink:0;">😊</div>
+      <label style="font-size:14px;font-weight:500;color:var(--green);cursor:pointer;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:8px;padding:10px 16px;">
+        Upload Photo
+        <input type="file" accept="image/*" style="display:none;" onchange="handleStaffPhoto(this)">
+      </label>
+    </div>
+    <button class="btn btn-dark btn-sm" onclick="closeStaffPhotoModal()">Done</button>
   </div>
 </div>
 
@@ -513,9 +542,22 @@ let gpsWatchId = null;
 let isSharing = true;
 let clientUnsubscribe = null;
 
-const EMOJIS = ['😊','😄','🙂','😎','🤔','😐','🙃','😀','🤩','😋',
-  '🧑','👦','👧','👨','👩','🧔','👴','👵','🧒','🙋',
-  '🚶','🏃','💪','🌟','⭐','🔵','🟢','🔴','🟡','🟠'];
+const EMOJIS = [
+  // Faces
+  '😊','😄','😎','🤔','😐','🙂','😀','🤩',
+  // Light skin
+  '🧑🏻','👦🏻','👧🏻','👨🏻','👩🏻','🧔🏻',
+  // Medium-light skin  
+  '🧑🏼','👦🏼','👧🏼','👨🏼','👩🏼','🧔🏼',
+  // Medium skin
+  '🧑🏽','👦🏽','👧🏽','👨🏽','👩🏽','🧔🏽',
+  // Medium-dark skin
+  '🧑🏾','👦🏾','👧🏾','👨🏾','👩🏾','🧔🏾',
+  // Dark skin
+  '🧑🏿','👦🏿','👧🏿','👨🏿','👩🏿','🧔🏿',
+  // Symbols
+  '🌟','⭐','🔵','🟢','🔴','🟡','🟠','🟣'
+];
 let selectedEmoji = EMOJIS[0];
 let staffEmoji = EMOJIS[0];
 
@@ -696,7 +738,7 @@ function renderRoster() {
     const ago = c.lastSeen ? timeAgo(c.lastSeen) : '—';
     return `
       <div class="client-row ${c.status}" onclick="openModal('${c.id}')">
-        <div class="av">${c.emoji||'👤'}<div class="av-dot ${dotClass}"></div></div>
+        <div class="av">${c.photo ? `<img src="${c.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">` : (c.emoji||'👤')}<div class="av-dot ${dotClass}"></div></div>
         <div class="row-info">
           <div class="row-name">${c.name}</div>
           <div class="row-status ${statusClass}">${statusText}</div>
@@ -916,16 +958,17 @@ function addClient() {
   const name = document.getElementById('new-name').value.trim();
   const status = document.getElementById('new-status').value;
   if (!name) { toast('Enter a name', 'r'); return; }
-  const newClient = { id: 'local-'+Date.now(), name, status, emoji: selectedEmoji, lat: null, lng: null, lastSeen: Date.now() };
+  const newClient = { id: 'local-'+Date.now(), name, status, emoji: selectedEmoji, photo: newClientPhotoData||null, lat: null, lng: null, lastSeen: Date.now() };
   if (demoMode) {
     clients.push(newClient); renderRoster(); renderMap(); renderCompassTargets();
   } else {
     if (!firebaseReady) { toast('Still connecting…', 'r'); return; }
     const r = fbPush(fbRef(db, `orgs/${orgCode}/clients`));
-    fbSet(r, { name, status, emoji: selectedEmoji, lat: null, lng: null, lastSeen: Date.now() });
+    fbSet(r, { name, status, emoji: selectedEmoji, photo: newClientPhotoData||null, lat: null, lng: null, lastSeen: Date.now() });
   }
   document.getElementById('new-name').value = '';
-  selectedEmoji = EMOJIS[0];
+  selectedEmoji = EMOJIS[0]; newClientPhotoData = null;
+  document.getElementById('new-photo-preview').innerHTML = '📷';
   initEmojiGrid();
   toast(`✅ ${name} added`, 'g');
   switchTab('roster');
@@ -936,7 +979,8 @@ function openModal(id) {
   selectedClient = clients.find(c => c.id === id);
   if (!selectedClient) return;
   const c = selectedClient;
-  document.getElementById('m-avatar').textContent = c.emoji || '👤';
+  const av = document.getElementById('m-avatar');
+  if (c.photo) { av.innerHTML = `<img src="${c.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:16px;">`; } else { av.textContent = c.emoji || '👤'; }
   document.getElementById('m-name').textContent = c.name;
   const statusTxt = c.status === 'online' ? '🟢 Online & sharing' : c.status === 'missing' ? '🔴 Missing' : '⚪ Offline';
   const el = document.getElementById('m-status');
@@ -1045,6 +1089,61 @@ function staffLeave() {
   if (compassInterval) clearInterval(compassInterval);
   orgCode = ''; clients = [];
   show('s-landing');
+}
+
+// ══ PHOTO HANDLING ══
+let staffPhotoData = null;
+let newClientPhotoData = null;
+
+function compressImage(file, maxSize, callback) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height;
+      // Scale down to max 200x200
+      const max = maxSize || 200;
+      if (w > h && w > max) { h = h * max / w; w = max; }
+      else if (h > max) { w = w * max / h; h = max; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      callback(canvas.toDataURL('image/jpeg', 0.7));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleNewClientPhoto(input) {
+  const file = input.files[0]; if (!file) return;
+  compressImage(file, 200, data => {
+    newClientPhotoData = data;
+    const preview = document.getElementById('new-photo-preview');
+    preview.innerHTML = `<img src="${data}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`;
+  });
+}
+
+function handleStaffPhoto(input) {
+  const file = input.files[0]; if (!file) return;
+  compressImage(file, 200, data => {
+    staffPhotoData = data;
+    document.getElementById('staff-photo-preview').innerHTML = `<img src="${data}" style="width:100%;height:100%;object-fit:cover;border-radius:16px;">`;
+    document.getElementById('staff-emoji-badge').innerHTML = `<img src="${data}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;">`;
+  });
+}
+
+function showStaffPhoto() {
+  document.getElementById('staff-photo-modal').classList.add('open');
+  document.getElementById('staff-photo-preview').textContent = staffEmoji;
+  if (staffPhotoData) {
+    document.getElementById('staff-photo-preview').innerHTML = `<img src="${staffPhotoData}" style="width:100%;height:100%;object-fit:cover;border-radius:16px;">`;
+  }
+}
+
+function closeStaffPhotoModal(e) {
+  if (!e || e.target === document.getElementById('staff-photo-modal'))
+    document.getElementById('staff-photo-modal').classList.remove('open');
 }
 
 // ══ UTILS ══
