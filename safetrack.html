@@ -992,22 +992,53 @@ function openModal(id) {
   document.getElementById('m-lng').textContent = c.lng ? c.lng.toFixed(5)+'°' : '—';
   document.getElementById('m-seen').textContent = c.lastSeen ? timeAgo(c.lastSeen) : '—';
   document.getElementById('m-stat2').textContent = c.status.charAt(0).toUpperCase()+c.status.slice(1);
+  // Show correct action button based on status
+  renderModalActions();
   document.getElementById('modal').classList.add('open');
 }
 
 function closeModal() { document.getElementById('modal').classList.remove('open'); }
 function closeModalBg(e) { if (e.target === document.getElementById('modal')) closeModal(); }
 
+function renderModalActions() {
+  if (!selectedClient) return;
+  const actions = document.querySelector('.modal-actions');
+  const isMissing = selectedClient.status === 'missing';
+  actions.innerHTML = `
+    <button class="btn btn-dark btn-sm" onclick="compassTo()">🧭 Navigate</button>
+    ${isMissing 
+      ? `<button class="btn btn-green btn-sm" onclick="markFound()">✅ Mark Found</button>`
+      : `<button class="btn btn-red btn-sm" onclick="markMissing()">🔴 Missing</button>`
+    }
+    <button class="btn btn-dark btn-sm" onclick="confirmRemove()" style="border-color:rgba(244,63,94,0.3);color:var(--red);">🗑️ Remove</button>
+    <button class="btn btn-dark btn-sm" onclick="closeModal()">✕</button>`;
+}
+
 function markMissing() {
   if (!selectedClient) return;
   if (demoMode) {
     const c = clients.find(c => c.id === selectedClient.id);
-    if (c) c.status = 'missing';
+    if (c) { c.status = 'missing'; selectedClient.status = 'missing'; }
     renderRoster(); renderMap(); renderCompassTargets();
   } else {
     fbUpdate(fbRef(db, `orgs/${orgCode}/clients/${selectedClient.id}`), { status: 'missing' });
+    selectedClient.status = 'missing';
   }
   toast(`🔴 ${selectedClient.name} marked missing`, 'r');
+  closeModal();
+}
+
+function markFound() {
+  if (!selectedClient) return;
+  if (demoMode) {
+    const c = clients.find(c => c.id === selectedClient.id);
+    if (c) { c.status = 'online'; selectedClient.status = 'online'; }
+    renderRoster(); renderMap(); renderCompassTargets();
+  } else {
+    fbUpdate(fbRef(db, `orgs/${orgCode}/clients/${selectedClient.id}`), { status: 'online' });
+    selectedClient.status = 'online';
+  }
+  toast(`✅ ${selectedClient.name} marked found`, 'g');
   closeModal();
 }
 
