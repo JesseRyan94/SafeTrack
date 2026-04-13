@@ -2,7 +2,7 @@
   "name": "SafeTrack",
   "short_name": "SafeTrack",
   "description": "Real-time location tracking for your group",
-  "start_url": "/SafeTrack/safetrack.html",
+  "start_url": "/SafeTrack/",
   "display": "standalone",
   "background_color": "#0a0f1e",
   "theme_color": "#0a0f1e",
