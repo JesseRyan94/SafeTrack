@@ -1,6 +1,7 @@
-const CACHE = 'safetrack-v3';
+const CACHE = 'safetrack-v5';
 const ASSETS = [
-  '/SafeTrack/safetrack.html',
+  '/SafeTrack/',
+  '/SafeTrack/index.html',
   '/SafeTrack/manifest.json'
 ];
 
@@ -18,6 +19,14 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   e.respondWith(
-    fetch(e.request).catch(() => caches.match(e.request))
+    fetch(e.request).then(response => {
+      const clone = response.clone();
+      caches.open(CACHE).then(c => c.put(e.request, clone));
+      return response;
+    }).catch(() => caches.match(e.request))
   );
+});
+
+self.addEventListener('message', e => {
+  if (e.data === 'skipWaiting') self.skipWaiting();
 });
