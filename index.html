@@ -394,31 +394,23 @@ select option { background: var(--card); }
     <div id="c-coords" class="coord-box">Acquiring GPS…</div>
 
     <!-- Missing state UI -->
-    <div id="c-missing-banner" class="missing-banner" style="display:none;width:100%;max-width:320px;">
-      Your group is looking for you.<br>
-      <span style="font-size:13px;color:rgba(241,245,249,0.7);">Stay calm. Help is on the way.</span>
-    </div>
-
-    <div id="c-missing-message" style="display:none;width:100%;max-width:320px;padding:12px;background:var(--card2);border-radius:10px;text-align:center;font-size:14px;color:var(--muted);"></div>
+    <div id="c-missing-message" class="missing-banner" style="display:none;width:100%;max-width:320px;font-size:16px;font-weight:600;"></div>
 
     <!-- Client compass for navigating back -->
     <div class="client-compass-wrap" id="c-compass-wrap">
-      <div class="compass-outer">
-        <div class="compass-ring">
-          <div class="compass-cardinal n" style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:var(--green);position:absolute;top:10px;left:50%;transform:translateX(-50%);">N</div>
-          <div class="compass-cardinal s" style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:var(--muted);position:absolute;bottom:10px;left:50%;transform:translateX(-50%);">S</div>
-          <div class="compass-cardinal e" style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:var(--muted);position:absolute;right:12px;top:50%;transform:translateY(-50%);">E</div>
-          <div class="compass-cardinal w" style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:var(--muted);position:absolute;left:12px;top:50%;transform:translateY(-50%);">W</div>
-          <div style="display:flex;align-items:center;justify-content:center;">
-            <div id="c-needle" class="needle" style="transform:rotate(0deg);">
-              <div class="needle-top"></div>
-              <div class="needle-bot"></div>
-            </div>
+      <div style="position:relative;width:160px;height:160px;">
+        <div style="width:160px;height:160px;border-radius:50%;border:2px solid var(--border);background:radial-gradient(circle at center,var(--card2) 0%,var(--card) 100%);position:relative;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 6px rgba(0,229,160,0.04);">
+          <div style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:var(--green);position:absolute;top:8px;left:50%;transform:translateX(-50%);">N</div>
+          <div style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:var(--muted);position:absolute;bottom:8px;left:50%;transform:translateX(-50%);">S</div>
+          <div style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:var(--muted);position:absolute;right:8px;top:50%;transform:translateY(-50%);">E</div>
+          <div style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:var(--muted);position:absolute;left:8px;top:50%;transform:translateY(-50%);">W</div>
+          <div id="c-needle" class="needle" style="transform:rotate(0deg);">
+            <div class="needle-top"></div>
+            <div class="needle-bot"></div>
           </div>
         </div>
       </div>
-      <div style="font-size:13px;color:var(--muted);text-align:center;" id="c-compass-status">Locating your group...</div>
-      <button class="btn btn-dark btn-sm" onclick="closeClientCompass()">Back</button>
+      <div style="font-size:12px;color:var(--muted);text-align:center;" id="c-compass-status">Locating your group...</div>
     </div>
 
     <div id="c-normal-buttons"></div>
@@ -902,14 +894,12 @@ let clientIsMarkedMissing = false;
 
 function setClientMissingUI(isMissing, instruction) {
   const ring = document.getElementById('c-ring');
-  const banner = document.getElementById('c-missing-banner');
   const msgEl = document.getElementById('c-missing-message');
   const normalBtns = document.getElementById('c-normal-buttons');
 
   clientIsMarkedMissing = isMissing;
   if (isMissing) {
     ring.className = 'pulse-ring missing';
-    banner.style.display = 'block';
     normalBtns.style.display = 'none';
     startWatchingStaffLocation();
 
@@ -925,7 +915,6 @@ function setClientMissingUI(isMissing, instruction) {
     }
   } else {
     ring.className = 'pulse-ring sharing';
-    banner.style.display = 'none';
     msgEl.style.display = 'none';
     normalBtns.style.display = 'block';
     document.getElementById('c-compass-wrap').classList.remove('open');
