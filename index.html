@@ -1598,7 +1598,7 @@ async function sendMissingAlert(clientName, orgCode) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer " + p1 + p2
+        "Authorization": "Key " + p1 + p2
       },
       body: JSON.stringify({
         app_id: "3668d6d9-0452-48ab-9e46-fe7af25a7f35",
