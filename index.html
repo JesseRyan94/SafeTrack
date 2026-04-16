@@ -1694,7 +1694,17 @@ function timeAgo(ts) {
 </script>
 <script>
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("sw.js").catch(() => {});
+  navigator.serviceWorker.register("/SafeTrack/sw.js", { scope: "/SafeTrack/" }).then(reg => {
+    reg.addEventListener("updatefound", () => {
+      const newWorker = reg.installing;
+      newWorker.addEventListener("statechange", () => {
+        if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+          newWorker.postMessage("skipWaiting");
+          window.location.reload();
+        }
+      });
+    });
+  }).catch(() => {});
 }
 
 // ══ BACK BUTTON HANDLING ══
