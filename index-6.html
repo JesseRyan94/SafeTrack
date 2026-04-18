@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0f1e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SafeTrack">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="description" content="Real-time location tracking for your group">
+<link rel="manifest" href="manifest.json">
+<title>SafeTrack</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0f1e;
+  --card: #111827;
+  --card2: #1a2235;
+  --green: #00e5a0;
+  --blue: #3b82f6;
+  --red: #f43f5e;
+  --yellow: #fbbf24;
+  --text: #f1f5f9;
+  --muted: #64748b;
+  --border: rgba(255,255,255,0.08);
+  --r: 14px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; }
+body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); }
+
+/* ── SCREENS ── */
+.screen { display: none; height: 100dvh; flex-direction: column; overflow: hidden; }
+.screen.active { display: flex; }
+
+/* ── LANDING ── */
+#s-landing {
+  align-items: center; justify-content: center;
+  gap: 36px; padding: 40px 28px; text-align: center;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,229,160,0.1) 0%, transparent 70%), var(--bg);
+}
+.logo { font-family: 'Space Mono', monospace; font-size: 36px; font-weight: 700; letter-spacing: -1px; }
+.logo span { color: var(--green); }
+.tagline { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 280px; }
+.btn-stack { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 340px; }
+.btn { width: 100%; padding: 16px; border: none; border-radius: var(--r); font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.18s; }
+.btn-green { background: var(--green); color: #021a0e; }
+.btn-green:active { opacity: 0.85; transform: scale(0.98); }
+.btn-dark { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+.btn-dark:active { background: var(--card2); }
+.btn-red { background: var(--red); color: white; }
+.btn-red:active { opacity: 0.85; }
+.btn-sm { padding: 10px 16px; font-size: 14px; border-radius: 10px; }
+
+/* ── ROLE SCREENS ── */
+.role-screen { flex: 1; display: flex; flex-direction: column; padding: 32px 24px; gap: 20px; overflow-y: auto; }
+.back-btn { display: flex; align-items: center; gap: 8px; background: none; border: none; color: var(--muted); font-family: 'Outfit', sans-serif; font-size: 14px; cursor: pointer; padding: 0; margin-bottom: 8px; }
+.back-btn:active { color: var(--text); }
+.screen-title { font-size: 28px; font-weight: 800; }
+.screen-sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
+
+/* ── INPUTS ── */
+.input-group { display: flex; flex-direction: column; gap: 8px; }
+label { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+input, select {
+  background: var(--card); border: 1px solid var(--border);
+  color: var(--text); border-radius: 10px;
+  padding: 14px 16px; font-family: 'Outfit', sans-serif; font-size: 15px;
+  width: 100%; outline: none;
+}
+input:focus, select:focus { border-color: var(--green); }
+select option { background: var(--card); }
+
+/* ── CLIENT APP ── */
+#s-client { background: var(--bg); }
+.client-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+.client-header h2 { font-size: 18px; font-weight: 700; }
+.client-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; padding: 24px; text-align: center; }
+
+.pulse-ring {
+  width: 150px; height: 150px; border-radius: 50%; position: relative;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--border);
+}
+.pulse-ring.sharing { border-color: var(--green); animation: pulse 2s ease-in-out infinite; }
+.pulse-ring.sharing::before, .pulse-ring.sharing::after {
+  content: ''; position: absolute; border-radius: 50%; border: 1.5px solid var(--green);
+  animation: ripple 2s ease-out infinite;
+}
+.pulse-ring.sharing::after { animation-delay: 1s; }
+@keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(0,229,160,0.3)} 50%{box-shadow:0 0 0 12px rgba(0,229,160,0)} }
+@keyframes ripple { 0%{width:100%;height:100%;opacity:0.6} 100%{width:160%;height:160%;opacity:0;left:-30%;top:-30%} }
+.pulse-icon { font-size: 52px; }
+.share-label { font-size: 22px; font-weight: 700; }
+.share-sub { color: var(--muted); font-size: 14px; line-height: 1.6; max-width: 260px; }
+.coord-box { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--green); background: rgba(0,229,160,0.07); border: 1px solid rgba(0,229,160,0.2); border-radius: 10px; padding: 10px 16px; }
+
+/* ── STAFF APP ── */
+#s-staff { background: var(--bg); }
+.staff-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); background: rgba(10,15,30,0.95); position: sticky; top: 0; z-index: 50; backdrop-filter: blur(10px); }
+.staff-header h2 { font-size: 17px; font-weight: 700; }
+.header-org { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--green); background: rgba(0,229,160,0.1); border-radius: 6px; padding: 4px 8px; }
+
+/* ── TAB BAR ── */
+.tab-bar { display: flex; border-bottom: 1px solid var(--border); }
+.tab { flex: 1; padding: 12px 4px; font-family: 'Outfit', sans-serif; font-size: 12px; font-weight: 600; text-align: center; cursor: pointer; color: var(--muted); border: none; background: none; display: flex; flex-direction: column; align-items: center; gap: 3px; border-bottom: 2px solid transparent; transition: all 0.18s; }
+.tab.active { color: var(--green); border-bottom-color: var(--green); }
+.tab-icon { font-size: 18px; }
+
+.tab-panel { display: none; flex: 1; flex-direction: column; overflow-y: auto; }
+.tab-panel.active { display: flex; }
+
+/* ── ROSTER TAB ── */
+.roster-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px 8px; }
+.roster-head h3 { font-size: 16px; font-weight: 700; }
+.stats-row { display: flex; gap: 10px; padding: 0 18px 14px; }
+.stat { flex: 1; background: var(--card); border-radius: 12px; padding: 12px; text-align: center; }
+.stat-n { font-size: 22px; font-weight: 800; }
+.stat-n.g { color: var(--green); }
+.stat-n.r { color: var(--red); }
+.stat-n.y { color: var(--yellow); }
+.stat-l { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+.client-list { display: flex; flex-direction: column; gap: 8px; padding: 0 18px 20px; }
+.client-row {
+  background: var(--card); border-radius: var(--r); padding: 14px 16px;
+  display: flex; align-items: center; gap: 14px; cursor: pointer;
+  border: 1px solid var(--border); transition: all 0.18s;
+  position: relative; overflow: hidden;
+}
+.client-row::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 3px 0 0 3px; }
+.client-row.online::before { background: var(--green); }
+.client-row.offline::before { background: var(--muted); }
+.client-row.missing::before { background: var(--red); animation: blink 1s step-end infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+.client-row:active { background: var(--card2); }
+.av { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg,#3b82f6,#7c3aed); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; position: relative; }
+.av-dot { position: absolute; bottom: -2px; right: -2px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--card); }
+.av-dot.on { background: var(--green); }
+.av-dot.off { background: var(--muted); }
+.av-dot.miss { background: var(--red); }
+.row-info { flex: 1; min-width: 0; }
+.row-name { font-weight: 700; font-size: 15px; }
+.row-status { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.row-status.g { color: var(--green); }
+.row-status.r { color: var(--red); }
+.row-time { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.missing-badge { background: rgba(244,63,94,0.15); color: var(--red); border: 1px solid rgba(244,63,94,0.3); border-radius: 6px; padding: 2px 8px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; }
+.empty-state { text-align: center; padding: 48px 24px; color: var(--muted); }
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-text { font-size: 15px; }
+
+/* ── ADD CLIENT TAB ── */
+.add-form { padding: 20px 18px; display: flex; flex-direction: column; gap: 16px; }
+
+/* ── MAP TAB ── */
+.map-wrap { flex: 1; position: relative; background: var(--card); overflow: hidden; }
+.map-bg { width: 100%; height: 100%; object-fit: cover; opacity: 0.15; }
+.map-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 60%, var(--bg) 100%); }
+.map-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--muted); }
+.map-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(59,130,246,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.08) 1px, transparent 1px); background-size: 40px 40px; }
+.pin { position: absolute; transform: translate(-50%, -100%); cursor: pointer; transition: transform 0.2s; }
+.pin:active { transform: translate(-50%, -100%) scale(1.2); }
+.pin-bubble { width: 36px; height: 36px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; border: 2px solid white; }
+.pin-bubble.g { background: var(--green); }
+.pin-bubble.r { background: var(--red); animation: blink 1s step-end infinite; }
+.pin-bubble.o { background: var(--muted); }
+.pin-emoji { transform: rotate(45deg); font-size: 16px; }
+.pin-name { font-size: 10px; font-weight: 700; text-align: center; margin-top: 2px; text-shadow: 0 1px 3px rgba(0,0,0,0.8); white-space: nowrap; }
+.map-legend { position: absolute; bottom: 16px; left: 16px; background: rgba(10,15,30,0.9); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; font-size: 12px; display: flex; flex-direction: column; gap: 6px; }
+.legend-item { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── COMPASS TAB ── */
+.compass-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; padding: 24px; }
+.compass-targets { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; width: 100%; max-width: 400px; }
+.target-chip { padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; background: var(--card); border: 1px solid var(--border); cursor: pointer; transition: all 0.18s; }
+.target-chip.selected { background: rgba(0,229,160,0.15); border-color: var(--green); color: var(--green); }
+.target-chip.miss { border-color: rgba(244,63,94,0.4); color: var(--red); }
+.compass-outer { position: relative; width: 240px; height: 240px; }
+.compass-ring {
+  width: 240px; height: 240px; border-radius: 50%;
+  border: 2px solid var(--border);
+  background: radial-gradient(circle at center, var(--card2) 0%, var(--card) 100%);
+  position: relative; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 0 8px rgba(0,229,160,0.04), inset 0 0 40px rgba(0,0,0,0.3);
+}
+.compass-cardinal { position: absolute; font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; color: var(--muted); }
+.compass-cardinal.n { top: 10px; left: 50%; transform: translateX(-50%); color: var(--green); }
+.compass-cardinal.s { bottom: 10px; left: 50%; transform: translateX(-50%); }
+.compass-cardinal.e { right: 12px; top: 50%; transform: translateY(-50%); }
+.compass-cardinal.w { left: 12px; top: 50%; transform: translateY(-50%); }
+.compass-center { display: flex; align-items: center; justify-content: center; }
+.needle { width: 4px; height: 100px; position: relative; transition: transform 0.15s ease-out; }
+.needle-top { width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 54px solid var(--green); margin: 0 auto; filter: drop-shadow(0 0 6px var(--green)); }
+.needle-bot { width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 54px solid var(--red); margin: 0 auto; }
+.compass-info { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.compass-dist { font-family: 'Space Mono', monospace; font-size: 36px; font-weight: 700; color: var(--green); line-height: 1; }
+.compass-to { font-size: 15px; color: var(--text); font-weight: 600; }
+.compass-accuracy { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* ── MODAL ── */
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: flex-end; backdrop-filter: blur(4px); }
+.modal-bg.open { display: flex; }
+.modal { background: var(--card); border-radius: 20px 20px 0 0; padding: 24px 20px 36px; width: 100%; display: flex; flex-direction: column; gap: 16px; }
+.modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 8px; }
+.modal-avatar { width: 64px; height: 64px; border-radius: 16px; background: linear-gradient(135deg,#3b82f6,#7c3aed); display: flex; align-items: center; justify-content: center; font-size: 28px; }
+.modal-name { font-size: 22px; font-weight: 800; }
+.modal-status { font-size: 14px; }
+.modal-status.g { color: var(--green); }
+.modal-status.r { color: var(--red); }
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.detail-cell { background: var(--card2); border-radius: 10px; padding: 12px; }
+.detail-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.detail-val { font-family: 'Space Mono', monospace; font-size: 13px; }
+.modal-actions { display: flex; gap: 10px; margin-top: 4px; }
+.modal-actions .btn { flex: 1; }
+
+#leaflet-map { flex: 1; width: 100%; min-height: 400px; }
+.map-label { background: rgba(10,15,30,0.9); border: 1px solid rgba(255,255,255,0.08); color: #f1f5f9; font-family: Outfit,sans-serif; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px; box-shadow: none; }
+.leaflet-container { background: #1a2235; }
+/* ── EMOJI PICKER ── */
+.emoji-label { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.emoji-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.emoji-opt { width: 44px; height: 44px; border-radius: 10px; background: var(--card); border: 2px solid var(--border); font-size: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; }
+.emoji-opt.selected { border-color: var(--green); background: rgba(0,229,160,0.1); transform: scale(1.1); }
+.emoji-opt:active { transform: scale(0.95); }
+/* ── TOAST ── */
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--card2); border: 1px solid var(--border); color: var(--text); padding: 12px 20px; border-radius: 100px; font-size: 14px; font-weight: 500; z-index: 999; transition: transform 0.3s ease; white-space: nowrap; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+
+.pulse-ring.missing { border-color: #f59e0b; animation: pulse-amber 2s ease-in-out infinite; }
+@keyframes pulse-amber { 0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,0.3)} 50%{box-shadow:0 0 0 12px rgba(245,158,11,0)} }
+.pwd-wrap { position: relative; }
+.pwd-wrap input { padding-right: 44px; }
+.pwd-eye { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px; display: flex; align-items: center; }
+
+/* ── STAFF ROSTER ── */
+.staff-section-header { padding: 8px 18px 4px; font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+.staff-row { background: var(--card2); border-radius: var(--r); padding: 10px 16px; display: flex; align-items: center; gap: 12px; border: 1px solid var(--border); margin-bottom: 6px; }
+.staff-av { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.staff-diamond { width: 12px; height: 12px; transform: rotate(45deg); border: 2px solid #0a0f1e; }
+/* ── LOADING ── */
+.loading { display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column; gap: 16px; color: var(--muted); }
+.spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.team-picker { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 4px; }
+.team-opt { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: all 0.15s; }
+.team-opt.selected { border-color: white; transform: scale(1.15); box-shadow: 0 0 8px rgba(255,255,255,0.4); }
+.filter-bar { display: flex; gap: 6px; padding: 8px 18px; overflow-x: auto; flex-shrink: 0; }
+.filter-chip { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 2px solid transparent; cursor: pointer; white-space: nowrap; opacity: 0.45; transition: all 0.15s; background: var(--card); color: var(--text); }
+.filter-chip.active { opacity: 1; }
+</style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({ appId: "3668d6d9-0452-48ab-9e46-fe7af25a7f35" });
+  });
+</script>
+</head>
+<body>
+
+<!-- ══ LOADING ══ -->
+<div id="s-loading" class="screen active">
+  <div class="loading">
+    <div class="spinner"></div>
+    <div>Connecting…</div>
+  </div>
+</div>
+
+<!-- ══ LANDING ══ -->
+<div id="s-landing" class="screen">
+  <div style="font-size:56px;">📍</div>
+  <div>
+    <div class="logo">Safe<span>Track</span></div>
+    <div class="tagline" style="margin-top:8px;">Real-time location tracking for your group</div>
+  </div>
+  <div class="btn-stack">
+    <button class="btn btn-green" onclick="goStaff()">I'm Staff</button>
+    <button class="btn btn-dark" onclick="goClient()">I'm a Client</button>
+    <button class="btn btn-dark" onclick="viewDemo()" style="border-color:rgba(0,229,160,0.3);color:var(--green);font-size:14px;">👀 View Demo</button>
+  </div>
+</div>
+
+<!-- ══ STAFF LOGIN ══ -->
+<div id="s-staff-login" class="screen">
+  <div class="role-screen">
+    <button class="back-btn" onclick="show('s-landing')">← Back</button>
+    <div class="screen-title">Staff Login</div>
+    <div class="screen-sub">Enter your org code to access the dashboard</div>
+    <div class="input-group">
+      <label>Org Code</label>
+      <input id="staff-org" type="text" placeholder="e.g. HOPE-2024" autocapitalize="characters">
+    </div>
+    <div class="input-group">
+      <label>Your Name</label>
+      <input id="staff-name" type="text" placeholder="Your name">
+    </div>
+    <div class="input-group">
+      <label>Team Select</label>
+      <div class="team-picker" id="staff-team-picker"></div>
+    </div>
+    <div class="input-group">
+      <label>Staff Password</label>
+      <div class="pwd-wrap">
+        <input id="staff-password" type="password" placeholder="Enter staff password (if set)">
+        <button class="pwd-eye" onclick="togglePwd('staff-password',this)" type="button"><svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      </div>
+    </div>
+    <button class="btn btn-green" style="margin-top:8px;" onclick="staffLogin()">Enter Dashboard</button>
+  </div>
+</div>
+
+<!-- ══ CLIENT JOIN ══ -->
+<div id="s-client-join" class="screen">
+  <div class="role-screen">
+    <button class="back-btn" onclick="show('s-landing')">← Back</button>
+    <div class="screen-title">Join a Group</div>
+    <div class="screen-sub">Enter the code your staff gave you</div>
+    <div class="input-group">
+      <label>Org Code</label>
+      <input id="client-org" type="text" placeholder="e.g. HOPE-2024" autocapitalize="characters">
+    </div>
+    <div class="input-group">
+      <label>Your Name</label>
+      <input id="client-name" type="text" placeholder="Your name">
+    </div>
+    <div class="input-group">
+      <label>Team Select</label>
+      <div class="team-picker" id="client-team-picker"></div>
+    </div>
+    <div class="input-group">
+      <label>Join Password</label>
+      <div class="pwd-wrap">
+        <input id="client-password" type="password" placeholder="Password (if required)">
+        <button class="pwd-eye" onclick="togglePwd('client-password',this)" type="button"><svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      </div>
+    </div>
+    <button class="btn btn-green" style="margin-top:8px;" onclick="clientJoin()">Join &amp; Share Location</button>
+  </div>
+</div>
+
+<!-- ══ CLIENT APP ══ -->
+<div id="s-client" class="screen">
+  <div class="client-header">
+    <div style="font-family:'Space Mono',monospace;font-size:16px;font-weight:700;">Safe<span style="color:var(--green)">Track</span></div>
+    <div id="c-orgbadge" style="font-family:'Space Mono',monospace;font-size:11px;color:var(--green);background:rgba(0,229,160,0.1);border-radius:6px;padding:4px 8px;"></div>
+  </div>
+  <div class="client-body">
+    <div id="c-ring" class="pulse-ring sharing">
+      <div class="pulse-icon">📍</div>
+    </div>
+    <div>
+      <div id="c-label" class="share-label">Sharing Location</div>
+      <div id="c-sub" class="share-sub" style="margin-top:6px;">Your location is being shared with your group.</div>
+    </div>
+    <div id="c-coords" class="coord-box">Acquiring GPS…</div>
+    <div id="c-missing-message" style="display:none;width:100%;max-width:320px;padding:14px 18px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:12px;text-align:center;font-size:15px;font-weight:600;color:var(--text);"></div>
+    <!-- Client compass -->
+    <div id="c-compass-wrap" style="display:none;flex-direction:column;align-items:center;gap:12px;">
+      <div style="position:relative;width:160px;height:160px;">
+        <div style="width:160px;height:160px;border-radius:50%;border:2px solid var(--border);background:radial-gradient(circle at center,var(--card2) 0%,var(--card) 100%);position:relative;display:flex;align-items:center;justify-content:center;">
+          <div style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:var(--green);position:absolute;top:8px;left:50%;transform:translateX(-50%);">N</div>
+          <div style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:var(--muted);position:absolute;bottom:8px;left:50%;transform:translateX(-50%);">S</div>
+          <div style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:var(--muted);position:absolute;right:8px;top:50%;transform:translateY(-50%);">E</div>
+          <div style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:var(--muted);position:absolute;left:8px;top:50%;transform:translateY(-50%);">W</div>
+          <div id="c-needle" class="needle" style="transform:rotate(0deg);"><div class="needle-top"></div><div class="needle-bot"></div></div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);text-align:center;" id="c-compass-status">Locating your group...</div>
+    </div>
+    <div id="c-normal-buttons" style="display:flex;gap:10px;width:100%;max-width:320px;">
+    </div>
+  </div>
+</div>
+
+<!-- ══ STAFF APP ══ -->
+<div id="s-staff" class="screen">
+  <div class="staff-header">
+    <div style="font-family:'Space Mono',monospace;font-size:16px;font-weight:700;">Safe<span style="color:var(--green)">Track</span></div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="btn btn-dark btn-sm" style="font-size:12px;padding:6px 10px;border-color:rgba(0,229,160,0.3);color:var(--green);" onclick="showStaffPhoto()">✏️ Profile</button>
+      <div id="s-orgbadge" class="header-org"></div>
+      <button class="btn btn-dark btn-sm" style="font-size:12px;padding:6px 12px;" onclick="staffLeave()">Leave</button>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('roster')" id="tab-roster">
+      <span class="tab-icon">👥</span>Roster
+    </button>
+    <button class="tab" onclick="switchTab('map')" id="tab-map">
+      <span class="tab-icon">🗺️</span>Map
+    </button>
+    <button class="tab" onclick="switchTab('compass')" id="tab-compass">
+      <span class="tab-icon">🧭</span>Compass
+    </button>
+    <button class="tab" onclick="switchTab('add')" id="tab-add">
+      <span class="tab-icon">➕</span>Add
+    </button>
+    <button class="tab" onclick="switchTab('settings')" id="tab-settings">
+      <span class="tab-icon">⚙️</span>Settings
+    </button>
+  </div>
+
+  <!-- ROSTER -->
+  <div class="tab-panel active" id="panel-roster">
+    <div class="roster-head">
+      <h3>Clients</h3>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><div class="stat-n g" id="cnt-online">0</div><div class="stat-l">Online</div></div>
+      <div class="stat"><div class="stat-n r" id="cnt-missing">0</div><div class="stat-l">Missing</div></div>
+      <div class="stat"><div class="stat-n" id="cnt-total">0</div><div class="stat-l">Total</div></div>
+    </div>
+    <div class="filter-bar" id="roster-filter-bar"></div>
+    <div class="client-list" id="client-list"></div>
+  </div>
+
+  <!-- MAP -->
+  <div class="tab-panel" id="panel-map">
+    <div id="leaflet-map"></div>
+  </div>
+
+  <!-- COMPASS -->
+  <div class="tab-panel" id="panel-compass">
+    <div class="compass-wrap">
+      <div class="compass-targets" id="compass-targets"></div>
+
+      <!-- Compass ring -->
+      <div class="compass-outer">
+        <div class="compass-ring">
+          <div class="compass-cardinal n">N</div>
+          <div class="compass-cardinal s">S</div>
+          <div class="compass-cardinal e">E</div>
+          <div class="compass-cardinal w">W</div>
+          <div class="compass-center">
+            <div id="needle" class="needle" style="transform:rotate(0deg);">
+              <div class="needle-top"></div>
+              <div class="needle-bot"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="compass-info">
+        <div class="compass-dist" id="compass-dist">—</div>
+        <div class="compass-to" id="compass-to">Select a client above</div>
+        <div class="compass-accuracy" id="compass-accuracy"></div>
+        <button id="enable-compass-btn" class="btn btn-dark btn-sm" style="display:none;margin-top:12px;border-color:rgba(0,229,160,0.3);color:var(--green);" onclick="requestCompassPermission()">🧭 Enable Compass</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD CLIENT -->
+  <div class="tab-panel" id="panel-add">
+    <div class="add-form">
+      <div style="font-size:18px;font-weight:700;">Add Client</div>
+      <div class="input-group">
+        <label>Client Name</label>
+        <input id="new-name" type="text" placeholder="Full name">
+      </div>
+      <div class="input-group">
+        <label>Photo (optional)</label>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div id="new-photo-preview" style="width:52px;height:52px;border-radius:12px;background:var(--card2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;flex-shrink:0;">📷</div>
+          <label style="text-transform:none;font-size:14px;font-weight:500;color:var(--green);cursor:pointer;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:8px;padding:8px 14px;">
+            Upload Photo
+            <input type="file" accept="image/*" style="display:none;" onchange="handleNewClientPhoto(this)">
+          </label>
+        </div>
+      </div>
+      <div class="input-group">
+        <label>Initial Status</label>
+        <select id="new-status">
+          <option value="offline">Offline</option>
+          <option value="online">Online</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <div class="emoji-label">Choose Icon</div>
+        <div class="emoji-grid" id="emoji-grid"></div>
+      </div>
+      <button class="btn btn-green" onclick="addClient()">Add to Roster</button>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="tab-panel" id="panel-settings">
+    <div class="add-form">
+      <div style="padding:12px 14px;background:var(--card2);border-radius:10px;display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:13px;color:var(--muted);">Org Code</span>
+        <span id="settings-org" style="font-family:'Space Mono',monospace;color:var(--green);font-size:15px;font-weight:700;"></span>
+      </div>
+      <div style="font-size:16px;font-weight:700;">Staff Settings</div>
+      <div class="input-group">
+        <label>Staff Password</label>
+        <div class="pwd-wrap">
+          <input id="set-staff-password" type="password" placeholder="Set new staff password">
+          <button class="pwd-eye" onclick="togglePwd('set-staff-password',this)" type="button"><svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        </div>
+        <div style="font-size:12px;color:var(--muted);">Staff must enter this to access dashboard</div>
+      </div>
+      <div class="input-group">
+        <label>Client Join Password</label>
+        <div class="pwd-wrap">
+          <input id="set-client-password" type="password" placeholder="Set client password (optional)">
+          <button class="pwd-eye" onclick="togglePwd('set-client-password',this)" type="button"><svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        </div>
+        <div style="font-size:12px;color:var(--muted);">Leave blank to allow anyone with org code to join</div>
+      </div>
+      <button class="btn btn-green" onclick="savePasswords()">Save Passwords</button>
+      <div style="height:1px;background:var(--border);"></div>
+      <div style="font-size:16px;font-weight:700;">Admin Controls</div>
+      <div class="input-group">
+        <label>Admin Password</label>
+        <div class="pwd-wrap">
+          <input id="set-admin-password" type="password" placeholder="Set admin password">
+          <button class="pwd-eye" onclick="togglePwd('set-admin-password',this)" type="button"><svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        </div>
+        <div style="font-size:12px;color:var(--muted);">Only admin can end sessions</div>
+      </div>
+      <button class="btn btn-green" onclick="saveAdminPassword()">Save Admin Password</button>
+      <button class="btn btn-red" onclick="confirmEndSession()">End Session</button>
+      <div style="font-size:12px;color:var(--muted);text-align:center;">Removes all clients from current org</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ STAFF PHOTO MODAL ══ -->
+<div class="modal-bg" id="staff-photo-modal" onclick="closeStaffPhotoModal(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="font-size:16px;font-weight:700;margin-bottom:8px;">Your Profile</div>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+      <div id="staff-photo-preview" style="width:64px;height:64px;border-radius:16px;background:var(--card2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:32px;overflow:hidden;flex-shrink:0;">😊</div>
+      <label style="font-size:14px;font-weight:500;color:var(--green);cursor:pointer;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:8px;padding:10px 16px;">
+        Upload Photo
+        <input type="file" accept="image/*" style="display:none;" onchange="handleStaffPhoto(this)">
+      </label>
+    </div>
+    <button class="btn btn-dark btn-sm" onclick="closeStaffPhotoModal()">Done</button>
+  </div>
+</div>
+
+<!-- END SESSION MODAL -->
+<div class="modal-bg" id="end-session-modal" onclick="closeEndSessionModal(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="font-size:18px;font-weight:700;text-align:center;">End Session</div>
+    <div style="font-size:14px;color:var(--muted);text-align:center;margin-bottom:8px;">This will remove all clients. This cannot be undone.</div>
+    <div class="input-group">
+      <label>Admin Password</label>
+      <div class="pwd-wrap">
+        <input id="end-session-password" type="password" placeholder="Enter admin password">
+        <button class="pwd-eye" onclick="togglePwd('end-session-password',this)" type="button"><svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-dark btn-sm" style="flex:1;" onclick="closeEndSessionModal()">Cancel</button>
+      <button class="btn btn-red btn-sm" style="flex:1;" onclick="executeEndSession()">End Session</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CLIENT MODAL ══ -->
+<div class="modal-bg" id="modal" onclick="closeModalBg(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div class="modal-avatar" id="m-avatar">👤</div>
+      <div>
+        <div class="modal-name" id="m-name"></div>
+        <div class="modal-status" id="m-status"></div>
+      </div>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-cell"><div class="detail-label">Latitude</div><div class="detail-val" id="m-lat">—</div></div>
+      <div class="detail-cell"><div class="detail-label">Longitude</div><div class="detail-val" id="m-lng">—</div></div>
+      <div class="detail-cell"><div class="detail-label">Last Seen</div><div class="detail-val" id="m-seen">—</div></div>
+      <div class="detail-cell"><div class="detail-label">Status</div><div class="detail-val" id="m-stat2">—</div></div>
+    </div>
+    <div class="modal-actions">
+      <!-- dynamically rendered by renderModalActions() -->
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══ FIREBASE ══
+let db, fbRef, fbSet, fbOnValue, fbUpdate, fbPush, fbGet;
+let firebaseReady = false;
+let demoMode = false;
+
+async function initFirebase() {
+  try {
+    const app = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+    const db_ = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+    const firebaseApp = app.initializeApp({
+      apiKey: "AIzaSyC8sFeY5xd_SE0vWrG_zkq0fMAba-uugDY",
+      authDomain: "safetrack-b9fba.firebaseapp.com",
+      databaseURL: "https://safetrack-b9fba-default-rtdb.firebaseio.com",
+      projectId: "safetrack-b9fba",
+      storageBucket: "safetrack-b9fba.firebasestorage.app",
+      messagingSenderId: "91195086379",
+      appId: "1:91195086379:web:27a8d0dfff35f8621f3c6e"
+    });
+    db = db_.getDatabase(firebaseApp);
+    fbRef = db_.ref; fbSet = db_.set; fbOnValue = db_.onValue;
+    fbUpdate = db_.update; fbPush = db_.push; fbGet = db_.get; fbRemove = db_.remove;
+    firebaseReady = true;
+  } catch(e) {
+    // Firebase unavailable (local file) — run in demo mode
+    demoMode = true;
+    setupDemoMode();
+  }
+  show('s-landing');
+}
+initFirebase();
+
+// ══ DEMO MODE ══
+function setupDemoMode() {
+  // Stub Firebase functions so nothing crashes
+  fbRef = () => null;
+  fbSet = async () => {};
+  fbOnValue = () => () => {};
+  fbUpdate = async () => {};
+  fbPush = () => ({ key: 'demo-' + Date.now() });
+  fbGet = async () => ({ val: () => null });
+  fbRemove = async () => {};
+}
+
+const DEMO_CLIENTS = [
+  { id: 'd1', name: 'Marcus T.', status: 'online', team:'red',    emoji: '😊', lat: 40.7128,  lng: -74.0060, lastSeen: Date.now() - 60000 },
+  { id: 'd2', name: 'Sarah K.',  status: 'online', team:'blue',   emoji: '😄', lat: 40.7148,  lng: -74.0040, lastSeen: Date.now() - 120000 },
+  { id: 'd3', name: 'James R.',  status: 'missing', team:'yellow', emoji: '😐', lat: 40.7108,  lng: -74.0080, lastSeen: Date.now() - 600000 },
+  { id: 'd4', name: 'Lena M.',   status: 'offline', team:'green',  emoji: '🙂', lat: null,     lng: null,     lastSeen: Date.now() - 3600000 },
+  { id: 'd5', name: 'David W.',  status: 'online', team:'purple', emoji: '😎', lat: 40.7168,  lng: -74.0020, lastSeen: Date.now() - 30000 },
+];
+
+// ══ STATE ══
+let orgCode = '';
+let staffName = '';
+let clientId = null;
+let clients = [];
+let selectedClient = null;
+let compassTarget = null;
+let staffGPS = null;
+let compassInterval = null;
+let gpsWatchId = null;
+let isSharing = true;
+let clientUnsubscribe = null;
+let staffMembers = [];
+let staffGpsWatchId = null;
+
+const EMOJIS = [
+  // Faces & expressions
+  '😊','😄','😎','🤔','😐','🙂','😀','🤩','😋','😏',
+  '🥳','😇','🤠','🥸','😶','🫡','🤫','😬','🙄','😤',
+  // People — these render consistently across devices
+  '👶','🧒','👦','👧','🧑','👱','👨','👩','🧔','👴',
+  '👵','🧓','💂','👮','👷','🧑‍⚕️','🧑‍🏫','🧑‍🚒','🕵️','🧙',
+  // Activities
+  '🏃','🚶','🧍','🙋','🤷','💪','🫶','👍','✌️','🤙',
+  // Colors & shapes
+  '🔴','🟠','🟡','🟢','🔵','🟣','⚫','⚪','🌟','⭐'
+];
+let selectedEmoji = EMOJIS[0];
+let staffEmoji = EMOJIS[0];
+
+function initStaffEmojiGrid() {
+  const grid = document.getElementById('staff-emoji-grid');
+  if (!grid) return;
+  grid.innerHTML = EMOJIS.map((e, i) => `
+    <div class="emoji-opt ${i===0?'selected':''}" onclick="selectStaffEmoji(this, '${e}')">${e}</div>
+  `).join('');
+}
+
+function selectStaffEmoji(el, emoji) {
+  document.querySelectorAll('#staff-emoji-grid .emoji-opt').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  staffEmoji = emoji;
+  // Update login preview
+  const loginPreview = document.getElementById('staff-login-preview');
+  if (loginPreview && !staffPhotoData) loginPreview.textContent = emoji;
+}
+
+function initEmojiGrid() {
+  const grid = document.getElementById('emoji-grid');
+  if (!grid) return;
+  grid.innerHTML = EMOJIS.map((e, i) => `
+    <div class="emoji-opt ${i===0?'selected':''}" onclick="selectEmoji(this, '${e}')">${e}</div>
+  `).join('');
+}
+
+function selectEmoji(el, emoji) {
+  document.querySelectorAll('.emoji-opt').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedEmoji = emoji;
+}
+
+// ══ SCREEN NAV ══
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function goStaff() { show('s-staff-login'); setTimeout(() => renderTeamPicker('staff-team-picker'), 50); }
+function goClient() { show('s-client-join'); setTimeout(() => renderTeamPicker('client-team-picker'), 50); }
+
+function viewDemo() {
+  demoMode = true;
+  orgCode = 'DEMO';
+  staffName = 'Demo Staff';
+  document.getElementById('s-orgbadge').textContent = 'DEMO';
+  show('s-staff');
+  switchTab('roster');
+  subscribeClients();
+  startCompass();
+  toast('👀 Demo mode — tap around freely!', '');
+}
+
+// ══ STAFF LOGIN ══
+function staffLogin() {
+  const org = document.getElementById('staff-org').value.trim().toUpperCase();
+  const name = document.getElementById('staff-name').value.trim();
+  if (!org) { toast('Enter an org code', 'r'); return; }
+  if (!name) { toast('Enter your name', 'r'); return; }
+  const staffPwd = document.getElementById('staff-password').value;
+  if (demoMode) { proceedStaffLogin(org, name); return; }
+  orgCode = org;
+  fbGet(fbRef(db, `orgs/${org}/settings/staffPassword`)).then(snap => {
+    const saved = snap.val();
+    if (saved && staffPwd !== saved) { toast('❌ Incorrect staff password', 'r'); orgCode=''; return; }
+    proceedStaffLogin(org, name);
+  }).catch(() => proceedStaffLogin(org, name));
+}
+
+function proceedStaffLogin(org, name) {
+  orgCode = org; staffName = name;
+  document.getElementById('s-orgbadge').textContent = org;
+  const el = document.getElementById('settings-org'); if(el) el.textContent = org;
+  show('s-staff');
+  switchTab('roster');
+  subscribeClients();
+  startCompass();
+  if (demoMode) toast('📡 Demo mode — tap around freely!', '');
+  else {
+    if (window.OneSignalDeferred) {
+      window.OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.login(org + '_' + name.replace(/\s+/g,'_'));
+        OneSignal.User.addTag('org', org);
+        OneSignal.User.addTag('role', 'staff');
+      });
+    }
+    // Register staff presence
+    const staffKey = name.replace(/\s+/g,'_') + '_' + Date.now();
+    fbUpdate(fbRef(db, `orgs/${org}/staffOnline/${staffKey}`), { name, team: selectedTeam, online: true, lat: null, lng: null });
+    // Watch staff GPS
+    if (navigator.geolocation) {
+      staffGpsWatchId = navigator.geolocation.watchPosition(p => {
+        if (p.coords.accuracy <= 80) {
+          staffGPS = { lat: p.coords.latitude, lng: p.coords.longitude };
+          fbUpdate(fbRef(db, `orgs/${org}/staffOnline/${staffKey}`), { lat: p.coords.latitude, lng: p.coords.longitude, lastSeen: Date.now() });
+          if (firebaseReady && orgCode) fbUpdate(fbRef(db, `orgs/${orgCode}/staffGPS`), { lat: p.coords.latitude, lng: p.coords.longitude });
+        }
+      }, null, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 });
+    }
+    // Watch other staff
+    fbOnValue(fbRef(db, `orgs/${org}/staffOnline`), snap => {
+      const data = snap.val() || {};
+      staffMembers = Object.entries(data).map(([id,s]) => ({id,...s})).filter(s => s.online && s.name !== name);
+      renderRoster();
+      renderStaffOnMap();
+    });
+    // Clean up on leave
+    window.addEventListener('beforeunload', () => {
+      fbUpdate(fbRef(db, `orgs/${org}/staffOnline/${staffKey}`), { online: false });
+    });
+  }
+}
+
+// ══ CLIENT JOIN ══
+function clientJoin() {
+  const org = document.getElementById('client-org').value.trim().toUpperCase();
+  const name = document.getElementById('client-name').value.trim();
+  if (!org) { toast('Enter an org code', 'r'); return; }
+  if (!name) { toast('Enter your name', 'r'); return; }
+  if (!firebaseReady) { toast('Still connecting…', 'r'); return; }
+  orgCode = org;
+  document.getElementById('c-orgbadge').textContent = org;
+
+  // Register client in Firebase
+  const newRef = fbPush(fbRef(db, `orgs/${org}/clients`));
+  clientId = newRef.key;
+  fbSet(newRef, { name, status: 'online', team: selectedTeam, emoji: EMOJIS[Math.floor(Math.random()*EMOJIS.length)], lat: null, lng: null, lastSeen: Date.now() });
+
+  show('s-client');
+  startGPS();
+  toast(`Joined ${org}`, 'g');
+
+  // Watch staff GPS immediately so compass is ready if needed
+  if (firebaseReady) {
+    fbOnValue(fbRef(db, `orgs/${org}/staffGPS`), snap => {
+      const gps = snap.val();
+      if (gps) clientStaffGPS = gps;
+    });
+  }
+
+  // Watch for missing status changes
+  fbOnValue(fbRef(db, `orgs/${org}/clients/${clientId}/status`), snap => {
+    const status = snap.val();
+    if (status === 'missing' && !clientIsMarkedMissing) {
+      fbGet(fbRef(db, `orgs/${org}/clients/${clientId}/missingInstruction`)).then(isnap => {
+        setClientMissingUI(true, isnap.val() || 'stay');
+      });
+    } else if (status !== 'missing' && clientIsMarkedMissing) {
+      setClientMissingUI(false, 'stay');
+    } else if (!status) {
+      toast('Session has ended', '');
+      if (gpsWatchId) navigator.geolocation.clearWatch(gpsWatchId);
+      clientId = null; orgCode = '';
+      show('s-landing');
+    }
+  });
+}
+
+// ══ GPS SHARING (client) ══
+function startGPS() {
+  if (!navigator.geolocation) { toast('GPS not available', 'r'); return; }
+  document.getElementById('c-coords').textContent = 'Acquiring GPS…';
+  gpsWatchId = navigator.geolocation.watchPosition(pos => {
+    if (!isSharing || !clientId) return;
+    const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+    if (accuracy > 50) {
+      document.getElementById('c-coords').textContent = `Improving accuracy… (${Math.round(accuracy)}m)`;
+      return;
+    }
+    document.getElementById('c-coords').textContent = `${lat.toFixed(5)}°, ${lng.toFixed(5)}° (±${Math.round(accuracy)}m)`;
+    clientGPSForNearest = { lat, lng };
+    if (firebaseReady) {
+      const statusUpdate = clientIsMarkedMissing ? {} : { status: isSharing ? 'online' : 'offline' };
+      const update = { lat, lng, accuracy: Math.round(accuracy), lastSeen: Date.now(), ...statusUpdate };
+      if (navigator.getBattery) {
+        navigator.getBattery().then(b => {
+          update.battery = Math.round(b.level * 100);
+          fbUpdate(fbRef(db, `orgs/${orgCode}/clients/${clientId}`), update);
+        });
+      } else {
+        fbUpdate(fbRef(db, `orgs/${orgCode}/clients/${clientId}`), update);
+      }
+    }
+  }, err => {
+    document.getElementById('c-coords').textContent = 'GPS unavailable';
+  }, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 });
+}
+
+function toggleSharing() {
+  isSharing = !isSharing;
+  const ring = document.getElementById('c-ring');
+  const label = document.getElementById('c-label');
+  const sub = document.getElementById('c-sub');
+  const btn = document.querySelector('#s-client .btn-dark');
+  if (isSharing) {
+    ring.className = 'pulse-ring sharing';
+    label.textContent = 'Sharing Location';
+    sub.textContent = 'Your location is being shared with your group.';
+    btn.textContent = 'Pause Sharing';
+    if (firebaseReady && clientId) fbUpdate(fbRef(db, `orgs/${orgCode}/clients/${clientId}`), { status: 'online' });
+  } else {
+    ring.className = 'pulse-ring';
+    label.textContent = 'Sharing Paused';
+    sub.textContent = 'Your staff cannot see your location right now.';
+    btn.textContent = 'Resume Sharing';
+    if (firebaseReady && clientId) fbUpdate(fbRef(db, `orgs/${orgCode}/clients/${clientId}`), { status: 'offline' });
+  }
+}
+
+function clientLeave() {
+  if (gpsWatchId) navigator.geolocation.clearWatch(gpsWatchId);
+  if (firebaseReady && clientId) fbUpdate(fbRef(db, `orgs/${orgCode}/clients/${clientId}`), { status: 'offline' });
+  clientId = null;
+  orgCode = '';
+  show('s-landing');
+}
+
+// ══ SUBSCRIBE CLIENTS (staff) ══
+function subscribeClients() {
+  if (demoMode) {
+    clients = DEMO_CLIENTS.map(c => ({...c}));
+    staffMembers = [
+      { id: 's1', name: 'Alex M.', team: 'blue', lat: 40.7138, lng: -74.0050, online: true },
+      { id: 's2', name: 'Jordan P.', team: 'red', lat: 40.7155, lng: -74.0030, online: true },
+    ];
+    renderRoster(); renderMap(); renderCompassTargets();
+    setInterval(() => { clients.forEach(c => { if (c.status==="online") c.lastSeen = Date.now() - Math.random()*120000; }); renderRoster(); }, 5000);
+    return;
+  }
+  if (!firebaseReady) { setTimeout(subscribeClients, 500); return; }
+  if (clientUnsubscribe) clientUnsubscribe();
+  const r = fbRef(db, `orgs/${orgCode}/clients`);
+  clientUnsubscribe = fbOnValue(r, snap => {
+    const data = snap.val() || {};
+    clients = Object.entries(data).map(([id, c]) => ({ id, ...c }));
+    renderRoster(); renderCompassTargets();
+    if (lmap) { lmap.invalidateSize(); renderMap(); } else renderMap();
+  });
+}
+
+// ══ ROSTER ══
+function renderRoster() {
+  const list = document.getElementById('client-list');
+  const online = clients.filter(c => c.status === 'online').length;
+  const missing = clients.filter(c => c.status === 'missing').length;
+  document.getElementById('cnt-online').textContent = online;
+  document.getElementById('cnt-missing').textContent = missing;
+  document.getElementById('cnt-total').textContent = clients.length;
+
+  renderFilterBar('roster-filter-bar', rosterFilter, 'setRosterFilter');
+  const filtered = rosterFilter==='all' ? clients : clients.filter(c=>c.team===rosterFilter);
+  // Staff section at top - filter by team
+  const filteredStaff = rosterFilter==='all' ? staffMembers : staffMembers.filter(s=>s.team===rosterFilter);
+  const staffHtml = filteredStaff.length ? `
+    <div class="staff-section-header">Staff</div>
+    ${filteredStaff.map(s => {
+      const color = s.team ? getTeamColor(s.team) : 'var(--muted)';
+      return `<div class="staff-row">
+        <div class="staff-av" style="background:${color}22;">
+          <div style="width:12px;height:12px;background:${color};transform:rotate(45deg);border-radius:2px;"></div>
+        </div>
+        <div style="flex:1;">
+          <div style="font-weight:700;font-size:14px;">${s.name}</div>
+          <div style="font-size:12px;color:var(--muted);">${s.team ? s.team.charAt(0).toUpperCase()+s.team.slice(1)+' Team' : 'Staff'}</div>
+        </div>
+      </div>`;
+    }).join('')}
+    <div style="height:1px;background:var(--border);margin:4px 18px 12px;"></div>
+  ` : '';
+  if (clients.length === 0) {
+    list.innerHTML = staffHtml + `<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">No clients yet. Add one in the Add tab.</div></div>`;
+    return;
+  }
+
+  const clientsHeader = clients.length > 0 ? '<div class="staff-section-header">Clients</div>' : '';
+  list.innerHTML = staffHtml + clientsHeader + filtered.map(c => {
+    const dotClass = c.status === 'online' ? 'on' : c.status === 'missing' ? 'miss' : 'off';
+    const statusText = c.status === 'online' ? 'Sharing location' : c.status === 'missing' ? 'MISSING' : 'Offline';
+    const statusClass = c.status === 'online' ? 'g' : c.status === 'missing' ? 'r' : '';
+    const ago = c.lastSeen ? timeAgo(c.lastSeen) : '—';
+    return `
+      <div class="client-row ${c.status}" onclick="openModal('${c.id}')">
+        <div class="av" style="background:${c.team ? getTeamColor(c.team)+'33' : 'var(--card2)'};display:flex;align-items:center;justify-content:center;"><div style="width:20px;height:20px;border-radius:50%;background:${c.team ? getTeamColor(c.team) : 'var(--muted)'};"></div><div class="av-dot ${dotClass}"></div></div>
+        <div class="row-info">
+          <div class="row-name">${c.name}</div>
+          <div class="row-status ${statusClass}">${statusText}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+          <div class="row-time">${ago}</div>
+          ${c.battery !== undefined ? `<div style="font-size:11px;color:${c.battery<=20?'var(--red)':'var(--muted)'};">🔋 ${c.battery}%</div>` : ''}
+          ${c.status==='missing'?'<div class="missing-badge">MISSING</div>':''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ══ STAFF MAP ══
+let staffMarkers = {};
+
+function renderStaffOnMap() {
+  if (!lmap) return;
+  const visible = staffMembers.filter(s => s.lat && s.lng);
+  Object.keys(staffMarkers).forEach(id => {
+    if (!visible.find(s => s.id === id)) {
+      lmap.removeLayer(staffMarkers[id]);
+      delete staffMarkers[id];
+    }
+  });
+  visible.forEach(s => {
+    const color = s.team ? getTeamColor(s.team) : '#ffffff';
+    const pos = [s.lat, s.lng];
+    if (staffMarkers[s.id]) {
+      staffMarkers[s.id].setLatLng(pos);
+    } else {
+      const icon = L.divIcon({
+        className: '',
+        html: `<div style="width:14px;height:14px;background:${color};border:2px solid #0a0f1e;transform:rotate(45deg);box-shadow:0 0 6px ${color}88;"></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7],
+      });
+      const marker = L.marker(pos, { icon })
+        .addTo(lmap)
+        .bindTooltip('⭐ ' + s.name.split(' ')[0], { permanent: true, direction: 'top', className: 'map-label' });
+      staffMarkers[s.id] = marker;
+    }
+  });
+}
+
+// ══ MAP (Leaflet — free, no API key) ══
+let lmap = null;
+let mapMarkers = {};
+let mapInitialized = false;
+
+function initLeafletMap() {
+  if (mapInitialized) return;
+  mapInitialized = true;
+  const mapEl = document.getElementById('leaflet-map');
+  if (!mapEl) return;
+
+  lmap = L.map('leaflet-map', { zoomControl: true }).setView([40.7128, -74.006], 13);
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO',
+    subdomains: 'abcd',
+    maxZoom: 19
+  }).addTo(lmap);
+
+  renderMap();
+}
+
+function makeIcon(color) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid #0a0f1e;box-shadow:0 0 6px ${color}88;"></div>`,
+    iconSize: [14, 14],
+    iconAnchor: [7, 7],
+  });
+}
+
+function renderMap() {
+  if (!lmap) return;
+  const visible = clients.filter(c => c.status !== 'offline' && c.lat && c.lng && (mapFilter==='all' || c.team===mapFilter));
+
+  // Remove stale markers
+  Object.keys(mapMarkers).forEach(id => {
+    if (!visible.find(c => c.id === id)) {
+      lmap.removeLayer(mapMarkers[id]);
+      delete mapMarkers[id];
+    }
+  });
+
+  if (visible.length === 0) return;
+
+  const bounds = [];
+  visible.forEach(c => {
+    const color = c.status === 'missing' ? '#f43f5e' : (c.team ? getTeamColor(c.team) : '#00e5a0');
+    const pos = [c.lat, c.lng];
+    if (mapMarkers[c.id]) {
+      mapMarkers[c.id].setLatLng(pos);
+    } else {
+      const marker = L.marker(pos, { icon: makeIcon(color) })
+        .addTo(lmap)
+        .bindTooltip(c.name.split(' ')[0], { permanent: true, direction: 'top', className: 'map-label' })
+        .on('click', () => openModal(c.id));
+      mapMarkers[c.id] = marker;
+    }
+    bounds.push(pos);
+  });
+
+  if (bounds.length === 1) {
+    lmap.setView(bounds[0], 16);
+  } else {
+    lmap.fitBounds(bounds, { padding: [40, 40] });
+  }
+}
+
+// ══ COMPASS ══
+let deviceHeading = null;
+let smoothedBearing = null;
+let lastOrientationTime = 0;
+
+function startCompass() {
+  // High frequency GPS watch
+  if (navigator.geolocation) {
+    navigator.geolocation.watchPosition(p => {
+      staffGPS = { lat: p.coords.latitude, lng: p.coords.longitude };
+      updateCompass();
+    }, null, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
+  }
+
+  // iOS requires explicit user gesture to get orientation permission
+  if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    document.getElementById('enable-compass-btn').style.display = 'block';
+    document.getElementById('compass-accuracy').textContent = 'Tap "Enable Compass" to start';
+  } else {
+    listenOrientation();
+  }
+
+  compassInterval = setInterval(updateCompass, 100); // 10x per second
+}
+
+function listenOrientation() {
+  let hasAbsolute = false;
+
+  window.addEventListener('deviceorientationabsolute', e => {
+    if (e.alpha !== null) {
+      hasAbsolute = true;
+      deviceHeading = (360 - e.alpha) % 360;
+      lastOrientationTime = Date.now();
+    }
+  }, true);
+
+  window.addEventListener('deviceorientation', e => {
+    if (hasAbsolute) return;
+    if (e.webkitCompassHeading !== undefined && e.webkitCompassHeading !== null) {
+      deviceHeading = e.webkitCompassHeading;
+      lastOrientationTime = Date.now();
+    }
+  }, true);
+}
+
+async function requestCompassPermission() {
+  try {
+    const perm = await DeviceOrientationEvent.requestPermission();
+    if (perm === 'granted') {
+      listenOrientation();
+      document.getElementById('enable-compass-btn').style.display = 'none';
+      document.getElementById('compass-accuracy').textContent = '✓ Compass enabled';
+    }
+  } catch(e) {
+    document.getElementById('compass-accuracy').textContent = 'Could not enable compass';
+  }
+}
+
+function smoothAngle(current, target, factor) {
+  if (current === null) return target;
+  let diff = target - current;
+  // Handle wrap-around (e.g. 350 -> 10)
+  if (diff > 180) diff -= 360;
+  if (diff < -180) diff += 360;
+  return (current + diff * factor + 360) % 360;
+}
+
+function renderCompassTargets() {
+  const wrap = document.getElementById('compass-targets');
+  if (clients.length === 0) {
+    wrap.innerHTML = '<div style="color:var(--muted);font-size:13px;">No clients yet</div>';
+    return;
+  }
+  wrap.innerHTML = clients.map(c => `
+    <div class="target-chip ${compassTarget?.id===c.id?'selected':''} ${c.status==='missing'?'miss':''}"
+         onclick="setCompassTarget('${c.id}')">
+      ${c.status==='missing'?'🔴 ':''}${c.name.split(' ')[0]}
+    </div>`).join('');
+}
+
+function setCompassTarget(id) {
+  compassTarget = clients.find(c => c.id === id);
+  renderCompassTargets();
+  updateCompass();
+}
+
+function updateCompass() {
+  if (!compassTarget || !compassTarget.lat) {
+    document.getElementById('compass-dist').textContent = '—';
+    document.getElementById('compass-to').textContent = compassTarget ? 'No GPS for this client yet' : 'Select a client above';
+    document.getElementById('compass-accuracy').textContent = '';
+    return;
+  }
+  if (!staffGPS) {
+    document.getElementById('compass-to').textContent = 'Waiting for your GPS...';
+    return;
+  }
+
+  const bearing = getBearing(staffGPS.lat, staffGPS.lng, compassTarget.lat, compassTarget.lng);
+  const dist = getDist(staffGPS.lat, staffGPS.lng, compassTarget.lat, compassTarget.lng);
+
+  // Adjust for phone heading
+  const heading = deviceHeading ?? 0;
+  const rawBearing = (bearing - heading + 360) % 360;
+
+  // Smooth the needle — fast response (0.3 factor) for crowd use
+  smoothedBearing = smoothAngle(smoothedBearing, rawBearing, 0.3);
+
+  document.getElementById('needle').style.transform = `rotate(${smoothedBearing}deg)`;
+
+  const feet = dist * 3.28084;
+  document.getElementById('compass-dist').textContent = feet < 5280 ? Math.round(feet)+' ft' : (feet/5280).toFixed(2)+' mi';
+  document.getElementById('compass-to').textContent = compassTarget.name;
+
+  // Accuracy hint
+  const stale = Date.now() - lastOrientationTime > 2000;
+  document.getElementById('compass-accuracy').textContent = 
+    deviceHeading === null ? '⚠️ Hold phone flat for compass' :
+    stale ? '⚠️ Compass signal weak' :
+    '✓ Compass active';
+}
+
+function getBearing(lat1,lng1,lat2,lng2) {
+  const dL = (lng2-lng1)*Math.PI/180;
+  const y = Math.sin(dL)*Math.cos(lat2*Math.PI/180);
+  const x = Math.cos(lat1*Math.PI/180)*Math.sin(lat2*Math.PI/180) - Math.sin(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.cos(dL);
+  return (Math.atan2(y,x)*180/Math.PI+360)%360;
+}
+function getDist(lat1,lng1,lat2,lng2) {
+  const R=6371000, dLat=(lat2-lat1)*Math.PI/180, dLng=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+// ══ ADD CLIENT ══
+function addClient() {
+  const name = document.getElementById('new-name').value.trim();
+  const status = document.getElementById('new-status').value;
+  if (!name) { toast('Enter a name', 'r'); return; }
+  const newClient = { id: 'local-'+Date.now(), name, status, emoji: selectedEmoji, photo: newClientPhotoData||null, lat: null, lng: null, lastSeen: Date.now() };
+  if (demoMode) {
+    clients.push(newClient); renderRoster(); renderMap(); renderCompassTargets();
+  } else {
+    if (!firebaseReady) { toast('Still connecting…', 'r'); return; }
+    const r = fbPush(fbRef(db, `orgs/${orgCode}/clients`));
+    fbSet(r, { name, status, emoji: selectedEmoji, photo: newClientPhotoData||null, lat: null, lng: null, lastSeen: Date.now() });
+  }
+  document.getElementById('new-name').value = '';
+  selectedEmoji = EMOJIS[0]; newClientPhotoData = null;
+  document.getElementById('new-photo-preview').innerHTML = '📷';
+  initEmojiGrid();
+  toast(`✅ ${name} added`, 'g');
+  switchTab('roster');
+}
+
+// ══ MODAL ══
+function openModal(id) {
+  selectedClient = clients.find(c => c.id === id);
+  if (!selectedClient) return;
+  const c = selectedClient;
+  const av = document.getElementById('m-avatar');
+  if (c.photo) { av.innerHTML = `<img src="${c.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:16px;">`; } else { av.textContent = c.emoji || '👤'; }
+  document.getElementById('m-name').textContent = c.name;
+  const statusTxt = c.status === 'online' ? '🟢 Online & sharing' : c.status === 'missing' ? '🔴 Missing' : '⚪ Offline';
+  const el = document.getElementById('m-status');
+  el.textContent = statusTxt;
+  el.className = 'modal-status ' + (c.status==='online'?'g':c.status==='missing'?'r':'');
+  document.getElementById('m-lat').textContent = c.lat ? c.lat.toFixed(5)+'°' : '—';
+  document.getElementById('m-lng').textContent = c.lng ? c.lng.toFixed(5)+'°' : '—';
+  document.getElementById('m-seen').textContent = c.lastSeen ? timeAgo(c.lastSeen) : '—';
+  document.getElementById('m-stat2').textContent = c.status.charAt(0).toUpperCase()+c.status.slice(1);
+  // Show correct action button based on status
+  renderModalActions();
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function closeModalBg(e) { if (e.target === document.getElementById('modal')) closeModal(); }
+
+function renderModalActions() {
+  if (!selectedClient) return;
+  const actions = document.querySelector('.modal-actions');
+  const isMissing = selectedClient.status === 'missing';
+  actions.innerHTML = `
+    <button class="btn btn-dark btn-sm" onclick="compassTo()">🧭 Navigate</button>
+    ${isMissing 
+      ? `<button class="btn btn-green btn-sm" onclick="markFound()">✅ Mark Found</button>`
+      : `<button class="btn btn-red btn-sm" onclick="markMissing()">🔴 Missing</button>`
+    }
+    <button class="btn btn-dark btn-sm" onclick="confirmRemove()" style="border-color:rgba(244,63,94,0.3);color:var(--red);">🗑️ Remove</button>
+    <button class="btn btn-dark btn-sm" onclick="closeModal()">✕</button>`;
+}
+
+function markMissing() {
+  if (!selectedClient) return;
+  const actions = document.querySelector('.modal-actions');
+  actions.innerHTML = `
+    <div style="width:100%;">
+      <div style="font-size:14px;font-weight:700;margin-bottom:8px;color:var(--text);">What should ${selectedClient.name} do?</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button class="btn btn-dark btn-sm" onclick="confirmMarkMissing('stay')">Stay Where You Are</button>
+        <button class="btn btn-dark btn-sm" onclick="confirmMarkMissing('navigate')">Navigate to Group</button>
+        <button class="btn btn-dark btn-sm" onclick="renderModalActions()">Cancel</button>
+      </div>
+    </div>`;
+}
+
+function confirmMarkMissing(instruction) {
+  if (!selectedClient) return;
+  if (demoMode) {
+    const c = clients.find(c => c.id === selectedClient.id);
+    if (c) { c.status = 'missing'; selectedClient.status = 'missing'; }
+    renderRoster(); renderMap(); renderCompassTargets();
+  } else {
+    fbUpdate(fbRef(db, `orgs/${orgCode}/clients/${selectedClient.id}`), { status: 'missing', missingInstruction: instruction });
+    selectedClient.status = 'missing';
+  }
+  toast(`${selectedClient.name} marked missing`, 'r');
+  sendMissingAlert(selectedClient.name, orgCode);
+  renderModalActions();
+}
+
+function markFound() {
+  if (!selectedClient) return;
+  if (demoMode) {
+    const c = clients.find(c => c.id === selectedClient.id);
+    if (c) { c.status = 'online'; selectedClient.status = 'online'; }
+    renderRoster(); renderMap(); renderCompassTargets();
+  } else {
+    fbUpdate(fbRef(db, `orgs/${orgCode}/clients/${selectedClient.id}`), { status: 'online' });
+    selectedClient.status = 'online';
+  }
+  toast(`✅ ${selectedClient.name} marked found`, 'g');
+  renderModalActions();
+}
+
+function confirmRemove() {
+  if (!selectedClient) return;
+  const name = selectedClient.name;
+  // Show confirmation inside modal
+  const actions = document.querySelector('.modal-actions');
+  actions.innerHTML = `
+    <div style="width:100%;text-align:center;">
+      <div style="font-size:14px;margin-bottom:12px;color:var(--text);">Remove <strong>${name}</strong> from the roster?</div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-dark btn-sm" style="flex:1;" onclick="renderModalActions()">Cancel</button>
+        <button class="btn btn-red btn-sm" style="flex:1;" onclick="removeClient()">Yes, Remove</button>
+      </div>
+    </div>`;
+}
+
+// renderModalActions defined above
+
+function removeClient() {
+  if (!selectedClient) return;
+  const name = selectedClient.name;
+  const id = selectedClient.id;
+  if (demoMode) {
+    clients = clients.filter(c => c.id !== id);
+    if (mapMarkers[id]) { lmap && lmap.removeLayer(mapMarkers[id]); delete mapMarkers[id]; }
+    renderRoster(); renderMap(); renderCompassTargets();
+  } else {
+    fbRemove(fbRef(db, `orgs/${orgCode}/clients/${id}`));
+  }
+  toast(`🗑️ ${name} removed from roster`, '');
+  closeModal();
+}
+
+function compassTo() {
+  if (!selectedClient) return;
+  closeModal();
+  compassTarget = selectedClient;
+  switchTab('compass');
+  renderCompassTargets();
+  updateCompass();
+  toast(`🧭 Navigating to ${selectedClient.name}`, 'g');
+}
+
+// ══ TAB SWITCHING ══
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+  if (name === 'add') initEmojiGrid();
+  if (name === 'settings') { const el = document.getElementById('settings-org'); if(el) el.textContent = orgCode; }
+  if (name === 'map') {
+    renderStaffOnMap();
+    if (!mapInitialized) {
+      if (typeof L !== 'undefined') {
+        initLeafletMap();
+      } else {
+        // Wait for Leaflet to load
+        const wait = setInterval(() => {
+          if (typeof L !== 'undefined') { clearInterval(wait); initLeafletMap(); }
+        }, 100);
+      }
+    } else {
+      renderMap();
+      setTimeout(() => { lmap && lmap.invalidateSize(); renderMap(); }, 150);
+    }
+  }
+  if (name === 'compass') { renderCompassTargets(); updateCompass(); }
+}
+
+// ══ LEAVE ══
+function staffLeave() {
+  if (clientUnsubscribe) clientUnsubscribe();
+  if (compassInterval) clearInterval(compassInterval);
+  if (staffGpsWatchId) navigator.geolocation.clearWatch(staffGpsWatchId);
+  orgCode = ''; clients = []; staffMembers = [];
+  show('s-landing');
+}
+
+// ══ PHOTO HANDLING ══
+let staffPhotoData = null;
+let newClientPhotoData = null;
+
+function compressImage(file, maxSize, callback) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height;
+      // Scale down to max 200x200
+      const max = maxSize || 200;
+      if (w > h && w > max) { h = h * max / w; w = max; }
+      else if (h > max) { w = w * max / h; h = max; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      callback(canvas.toDataURL('image/jpeg', 0.7));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleNewClientPhoto(input) {
+  const file = input.files[0]; if (!file) return;
+  compressImage(file, 200, data => {
+    newClientPhotoData = data;
+    const preview = document.getElementById('new-photo-preview');
+    preview.innerHTML = `<img src="${data}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`;
+  });
+}
+
+function handleStaffLoginPhoto(input) {
+  const file = input.files[0]; if (!file) return;
+  compressImage(file, 200, data => {
+    staffPhotoData = data;
+    const preview = document.getElementById('staff-login-preview');
+    if (preview) preview.innerHTML = `<img src="${data}" style="width:100%;height:100%;object-fit:cover;border-radius:14px;">`;
+  });
+}
+
+function handleStaffPhoto(input) {
+  const file = input.files[0]; if (!file) return;
+  compressImage(file, 200, data => {
+    staffPhotoData = data;
+    document.getElementById('staff-photo-preview').innerHTML = `<img src="${data}" style="width:100%;height:100%;object-fit:cover;border-radius:16px;">`;
+    document.getElementById('staff-emoji-badge').innerHTML = `<img src="${data}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;">`;
+  });
+}
+
+function showStaffPhoto() {
+  document.getElementById('staff-photo-modal').classList.add('open');
+  document.getElementById('staff-photo-preview').textContent = staffEmoji;
+  if (staffPhotoData) {
+    document.getElementById('staff-photo-preview').innerHTML = `<img src="${staffPhotoData}" style="width:100%;height:100%;object-fit:cover;border-radius:16px;">`;
+  }
+}
+
+function closeStaffPhotoModal(e) {
+  if (!e || e.target === document.getElementById('staff-photo-modal'))
+    document.getElementById('staff-photo-modal').classList.remove('open');
+}
+
+
+// ══ TEAMS ══
+const TEAMS = [
+  { id: 'red',    name: 'Red',    color: '#ef4444' },
+  { id: 'yellow', name: 'Yellow', color: '#facc15' },
+  { id: 'blue',   name: 'Blue',   color: '#3b82f6' },
+  { id: 'green',  name: 'Green',  color: '#22c55e' },
+  { id: 'purple', name: 'Purple', color: '#a855f7' },
+];
+let selectedTeam = 'green';
+let rosterFilter = 'all';
+let mapFilter = 'all';
+
+function getTeamColor(teamId) {
+  return TEAMS.find(t => t.id === teamId)?.color || '#00e5a0';
+}
+function renderTeamPicker(containerId) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = TEAMS.map(t =>
+    `<div class="team-opt ${selectedTeam===t.id?'selected':''}" style="background:${t.color};" title="${t.name}" onclick="selectTeamOpt('${t.id}','${containerId}')"></div>`
+  ).join('');
+}
+function selectTeamOpt(teamId, containerId) {
+  selectedTeam = teamId;
+  document.querySelectorAll('#'+containerId+' .team-opt').forEach((el,i) => {
+    el.classList.toggle('selected', TEAMS[i].id === teamId);
+  });
+}
+function renderFilterBar(barId, currentFilter, onClickFn) {
+  const bar = document.getElementById(barId);
+  if (!bar || !clients.length) return;
+  const teams = ['all', ...new Set(clients.map(c => c.team).filter(Boolean))];
+  bar.innerHTML = teams.map(t => {
+    const team = TEAMS.find(tm => tm.id === t);
+    const color = team ? team.color : 'var(--green)';
+    const label = team ? team.name : 'All';
+    return `<div class="filter-chip ${currentFilter===t?'active':''}" style="border-color:${color};${currentFilter===t?'background:'+color+'22;':''}" onclick="${onClickFn}('${t}')">${label}</div>`;
+  }).join('');
+}
+function setRosterFilter(t) { rosterFilter=t; renderRoster(); }
+
+
+function togglePwd(inputId, btn) {
+  const input = document.getElementById(inputId);
+  const eyeOpen = `<svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+  const eyeClosed = `<svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+  if (input.type === 'password') { input.type = 'text'; btn.innerHTML = eyeClosed; }
+  else { input.type = 'password'; btn.innerHTML = eyeOpen; }
+}
+
+
+function savePasswords() {
+  const staffPwd = document.getElementById('set-staff-password').value;
+  const clientPwd = document.getElementById('set-client-password').value;
+  if (!firebaseReady) { toast('Not connected', 'r'); return; }
+  const updates = {};
+  if (staffPwd) updates[`orgs/${orgCode}/settings/staffPassword`] = staffPwd;
+  if (clientPwd) updates[`orgs/${orgCode}/settings/clientPassword`] = clientPwd;
+  fbUpdate(fbRef(db), updates).then(() => {
+    toast('✅ Passwords saved', 'g');
+    document.getElementById('set-staff-password').value = '';
+    document.getElementById('set-client-password').value = '';
+  });
+}
+
+function saveAdminPassword() {
+  const pwd = document.getElementById('set-admin-password').value;
+  if (!pwd) { toast('Enter a password', 'r'); return; }
+  if (!firebaseReady) { toast('Not connected', 'r'); return; }
+  fbUpdate(fbRef(db), { [`orgs/${orgCode}/settings/adminPassword`]: pwd }).then(() => {
+    toast('✅ Admin password saved', 'g');
+    document.getElementById('set-admin-password').value = '';
+  });
+}
+
+function confirmEndSession() {
+  if (!firebaseReady) { toast('Not connected', 'r'); return; }
+  document.getElementById('end-session-password').value = '';
+  document.getElementById('end-session-modal').classList.add('open');
+}
+
+function closeEndSessionModal(e) {
+  if (!e || e.target === document.getElementById('end-session-modal'))
+    document.getElementById('end-session-modal').classList.remove('open');
+}
+
+function executeEndSession() {
+  const enteredPwd = document.getElementById('end-session-password').value;
+  fbGet(fbRef(db, `orgs/${orgCode}/settings/adminPassword`)).then(snap => {
+    const savedPwd = snap.val();
+    if (savedPwd && enteredPwd !== savedPwd) { toast('❌ Incorrect admin password', 'r'); return; }
+    doEndSession();
+  }).catch(() => doEndSession());
+}
+
+function doEndSession() {
+  fbRemove(fbRef(db, `orgs/${orgCode}/clients`)).then(() => {
+    document.getElementById('end-session-modal').classList.remove('open');
+    toast('✅ Session ended — roster cleared', 'g');
+    clients = [];
+    renderRoster(); renderCompassTargets();
+    if (lmap) renderMap();
+  });
+}
+
+
+async function sendMissingAlert(clientName, orgCode) {
+  const p1 = "os_v2_app_gzunnwiekjekxhsg7z5pewt7";
+  const p2 = "guceshpawiheu2ms6fpuynh3mvbnwdjmh44sc72c53yndgjnvlibmkteea3mklzf4fdoiygbanghucq";
+  try {
+    await fetch("https://api.onesignal.com/notifications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Key " + p1 + p2 },
+      body: JSON.stringify({
+        app_id: "3668d6d9-0452-48ab-9e46-fe7af25a7f35",
+        included_segments: ["Total Subscriptions"],
+        headings: { en: "⚠️ Client Missing!" },
+        contents: { en: clientName + " has been marked missing in group " + orgCode }
+      })
+    });
+  } catch(e) { console.log("Notification error:", e); }
+}
+
+
+let clientIsMarkedMissing = false;
+let clientStaffGPS = null;
+let clientGPSForNearest = null;
+let clientCompassInterval = null;
+
+function setClientMissingUI(isMissing, instruction) {
+  clientIsMarkedMissing = isMissing;
+  const ring = document.getElementById('c-ring');
+  const msgEl = document.getElementById('c-missing-message');
+  const compassWrap = document.getElementById('c-compass-wrap');
+  const normalBtns = document.getElementById('c-normal-buttons');
+  if (isMissing) {
+    ring.className = 'pulse-ring missing';
+    normalBtns.style.display = 'none';
+    if (instruction === 'navigate') {
+      msgEl.style.display = 'block';
+      msgEl.textContent = 'Navigate to your group safely.';
+      compassWrap.style.display = 'flex';
+      startClientCompass();
+    } else {
+      msgEl.style.display = 'block';
+      msgEl.textContent = 'Please stay where you are.';
+      compassWrap.style.display = 'none';
+    }
+    // Watch all staff and find nearest
+    if (firebaseReady && orgCode) {
+      fbOnValue(fbRef(db, `orgs/${orgCode}/staffOnline`), snap => {
+        const data = snap.val() || {};
+        const staffWithGPS = Object.values(data).filter(s => s.online && s.lat && s.lng);
+        if (!staffWithGPS.length) return;
+        if (!clientGPSForNearest) { clientStaffGPS = staffWithGPS[0]; return; }
+        // Find nearest
+        let nearest = staffWithGPS[0];
+        let minDist = Infinity;
+        staffWithGPS.forEach(s => {
+          const d = Math.pow(s.lat - clientGPSForNearest.lat, 2) + Math.pow(s.lng - clientGPSForNearest.lng, 2);
+          if (d < minDist) { minDist = d; nearest = s; }
+        });
+        clientStaffGPS = nearest;
+      });
+    }
+  } else {
+    ring.className = 'pulse-ring sharing';
+    msgEl.style.display = 'none';
+    compassWrap.style.display = 'none';
+    normalBtns.style.display = 'flex';
+    if (clientCompassInterval) clearInterval(clientCompassInterval);
+  }
+}
+
+function startClientCompass() {
+  if (clientCompassInterval) clearInterval(clientCompassInterval);
+  let clientHeading = null;
+  let clientGPS = null;
+  let smoothed = null;
+  let hasAbsolute = false;
+  navigator.geolocation && navigator.geolocation.watchPosition(p => {
+    clientGPS = { lat: p.coords.latitude, lng: p.coords.longitude };
+  }, null, { enableHighAccuracy: true, maximumAge: 0 });
+  window.addEventListener('deviceorientationabsolute', e => {
+    if (e.alpha !== null) { hasAbsolute = true; clientHeading = (360 - e.alpha) % 360; }
+  }, true);
+  window.addEventListener('deviceorientation', e => {
+    if (hasAbsolute) return;
+    if (e.webkitCompassHeading != null) clientHeading = e.webkitCompassHeading;
+  }, true);
+  clientCompassInterval = setInterval(() => {
+    if (!clientStaffGPS || !clientGPS) {
+      document.getElementById('c-compass-status').textContent = 'Locating your group...';
+      return;
+    }
+    const dL = (clientStaffGPS.lng - clientGPS.lng) * Math.PI / 180;
+    const y = Math.sin(dL) * Math.cos(clientStaffGPS.lat * Math.PI / 180);
+    const x = Math.cos(clientGPS.lat * Math.PI / 180) * Math.sin(clientStaffGPS.lat * Math.PI / 180) - Math.sin(clientGPS.lat * Math.PI / 180) * Math.cos(clientStaffGPS.lat * Math.PI / 180) * Math.cos(dL);
+    const bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+    const heading = clientHeading ?? 0;
+    const raw = (bearing - heading + 360) % 360;
+    if (smoothed === null) smoothed = raw;
+    let diff = raw - smoothed;
+    if (diff > 180) diff -= 360;
+    if (diff < -180) diff += 360;
+    smoothed = (smoothed + diff * 0.3 + 360) % 360;
+    document.getElementById('c-needle').style.transform = `rotate(${smoothed}deg)`;
+    document.getElementById('c-compass-status').textContent = clientHeading === null ? 'Hold phone flat' : 'Follow the green arrow';
+  }, 100);
+}
+
+// ══ UTILS ══
+let toastTimer;
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = type==='g'?'rgba(0,229,160,0.3)':type==='r'?'rgba(244,63,94,0.3)':'var(--border)';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function timeAgo(ts) {
+  const s = Math.floor((Date.now()-ts)/1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s/60)+'m ago';
+  if (s < 86400) return Math.floor(s/3600)+'h ago';
+  return Math.floor(s/86400)+'d ago';
+}
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/SafeTrack/sw.js").catch(() => {});
+}
+
+// ══ BACK BUTTON HANDLING ══
+function pushHistory() {
+  history.pushState({ page: currentScreen }, '', '');
+}
+
+window.addEventListener('popstate', (e) => {
+  const screen = document.querySelector('.screen.active')?.id;
+  if (screen === 's-staff') {
+    // If modal is open, close it
+    if (document.getElementById('modal').classList.contains('open')) {
+      closeModal();
+      history.pushState({}, '');
+      return;
+    }
+    // Otherwise go back to landing
+    staffLeave();
+  } else if (screen === 's-client') {
+    clientLeave();
+  } else if (screen === 's-staff-login' || screen === 's-client-join') {
+    show('s-landing');
+  } else {
+    // Already on landing, let browser handle it
+  }
+  history.pushState({}, '');
+});
+
+// Push state whenever we navigate to a new screen
+const _origShow = show;
+window.show = function(id) {
+  _origShow(id);
+  if (id !== 's-landing') {
+    history.pushState({ page: id }, '');
+  }
+};
+
+// Init with a history entry
+history.pushState({}, '');
+
+</script>
+</body>
+</html>
